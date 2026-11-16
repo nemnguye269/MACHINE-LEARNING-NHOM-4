@@ -72,6 +72,11 @@
 \usepackage{eso-pic}
 \usepackage{fancyhdr}
 
+% Trích dẫn tài liệu tham khảo theo số [n], nhãn được đặt trong
+% backmatter/tai_lieu_tham_khao.tex bằng \label{ten-tai-lieu}.
+% Dùng \renewcommand vì polyglossia đã định nghĩa sẵn \cite.
+\renewcommand{\cite}[1]{[\ref{#1}]}
+
 % =========================
 % 4. HYPERLINK
 % =========================
@@ -186,7 +191,9 @@
 \renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}}
 \setlength{\cftbeforechapskip}{6pt}
 
-\renewcommand{\cfttoctitlefont}{\hfill\bfseries\fontsize{14pt}{16pt}\selectfont\MakeUppercase}
+% Lưu ý: bỏ \MakeUppercase ở đây vì bản LaTeX 2026 khiến \MakeUppercase
+% (dựa expl3) lỗi khi áp lên \contentsname; \contentsname đã viết in hoa sẵn.
+\renewcommand{\cfttoctitlefont}{\hfill\bfseries\fontsize{14pt}{16pt}\selectfont}
 \renewcommand{\cftaftertoctitle}{\hfill}
 \setlength{\cftbeforetoctitleskip}{0pt}
 \setlength{\cftaftertoctitleskip}{18pt}
@@ -238,17 +245,50 @@
 % =========================
 \newcommand{\BoGiaoDuc}{BỘ GIÁO DỤC VÀ ĐÀO TẠO}
 \newcommand{\TenTruong}{TRƯỜNG ĐẠI HỌC ĐẠI NAM}
+\newcommand{\Khoa}{KHOA CÔNG NGHỆ THÔNG TIN}
 
-\newcommand{\TenSinhVien}{NGUYỄN QUYẾT A}
+% >>> SINH VIÊN SỬA THÔNG TIN CÁ NHÂN TẠI ĐÂY <<<
+\newcommand{\TenSinhVien}{HỌ VÀ TÊN SINH VIÊN}
 \newcommand{\MaSinhVien}{...}
 \newcommand{\KhoaHoc}{...}
 
-\newcommand{\TenBaoCao}{TÊN BÁO CÁO}
-\newcommand{\LoaiBaoCao}{BÁO CÁO THỰC TẬP TỐT NGHIỆP}
+\newcommand{\TenBaoCao}{PHÁT HIỆN TIN TỨC GIẢ MẠO SỬ DỤNG MẠNG NƠ-RON HỌC SÂU (LSTM)}
+\newcommand{\LoaiBaoCao}{BÁO CÁO HỌC PHẦN}
 \newcommand{\Nganh}{CÔNG NGHỆ THÔNG TIN}
 \newcommand{\ChuyenNganh}{...}
 
-\newcommand{\GiangVienHD}{ThS. Lê Thị Thùy Trang}
+\newcommand{\GiangVienHD}{Th.S. Lê Thị Thùy Trang}
+
+% Lớp chung của các thành viên nhóm (dùng cho bảng sinh viên trên bìa)
+\newcommand{\Lop}{18-11}
+
+% >>> DANH SÁCH THÀNH VIÊN NHÓM (sửa tên/MSV tại đây nếu cần) <<<
+\newcommand{\SinhVienMot}{NGUYỄN BẮC NAM}
+\newcommand{\MSVMot}{1871020409}
+\newcommand{\SinhVienHai}{ĐỖ MINH THÀNH}
+\newcommand{\MSVHai}{1871020544}
+\newcommand{\SinhVienBa}{NGUYỄN PHI HÙNG}
+\newcommand{\MSVBa}{1871020282}
+\newcommand{\SinhVienBon}{NGUYỄN ĐỨC THÁI}
+\newcommand{\MSVBon}{1871020528}
+
+% Danh sách nhóm in trên bìa, mỗi dòng: Họ tên --- MSV
+\newcommand{\DanhSachNhom}{%
+    \SinhVienMot{} --- MSV: \MSVMot\\[2pt]
+    \SinhVienHai{} --- MSV: \MSVHai\\[2pt]
+    \SinhVienBa{} --- MSV: \MSVBa\\[2pt]
+    \SinhVienBon{} --- MSV: \MSVBon%
+}
+
+% Bảng chữ ký (lời cam đoan, lời cảm ơn)
+\newcommand{\ChuKyNhom}{%
+    \begin{tabular}{c}
+        \textbf{\SinhVienMot} \\
+        \textbf{\SinhVienHai} \\
+        \textbf{\SinhVienBa} \\
+        \textbf{\SinhVienBon}
+    \end{tabular}%
+}
 
 \newcommand{\DiaDiem}{HÀ NỘI}
 \newcommand{\Nam}{2026}

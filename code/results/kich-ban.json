@@ -1,0 +1,18 @@
+{
+  "E3_vocab20000": {
+    "accuracy": 0.9889,
+    "epochs": 6
+  },
+  "E4_maxlen128": {
+    "accuracy": 0.9821,
+    "epochs": 3
+  },
+  "E4_maxlen400": {
+    "accuracy": 0.9889,
+    "epochs": 4
+  },
+  "E5_noDropout_noEarlyStop": {
+    "accuracy": 0.9865,
+    "epochs": 10
+  }
+}

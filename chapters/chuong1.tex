@@ -1,59 +1,181 @@
-\chapter{TÌM HIỂU DOANH NGHIỆP}
+\chapter[TỔNG QUAN ĐỀ TÀI]{Tổng quan đề tài}
 
-\section{Giới thiệu tổng quan}
+\section{Lời dẫn}
 
-Sinh viên trình bày các nội dung sau:
+Trong thời đại Internet và mạng xã hội bùng nổ, tin tức được sản xuất, sao chép và lan truyền với tốc độ chưa từng có. Chỉ trong vài giây, một bài đăng có thể tiếp cận hàng triệu người dùng trên khắp thế giới. Bên cạnh dòng thông tin chính thống, \textbf{tin tức giả mạo} (fake news) cũng được tạo ra và phổ biến hàng ngày với các mục đích khác nhau: đánh lạc hướng dư luận, thao túng quan điểm công chúng, gây hoang mang xã hội, bôi nhọ cá nhân, tổ chức hoặc trục lợi thương mại.
 
-\begin{itemize}
-    \item Lịch sử hình thành và phát triển của doanh nghiệp.
-    \item Tầm nhìn, sứ mệnh và giá trị cốt lõi.
-    \item Lĩnh vực hoạt động chính của doanh nghiệp.
-    \item Các sản phẩm, dịch vụ hoặc giải pháp công nghệ nổi bật.
-\end{itemize}
+Theo nghĩa rộng, tin tức giả mạo là một bộ phận của hiện tượng \textit{thông tin sai lệch} đang phổ biến trên môi trường số. Khác với tin châm biếm (satire) hay tin gây hiểu lầm ngoài ý muốn, tin giả là nội dung được \textit{cố tình} chế tác để trông giống tin thật, khiến người đọc khó phát hiện bằng mắt thường. Nhiều khảo sát quốc tế chỉ ra rằng tỷ lệ người dùng tiếp cận tin tức chủ yếu qua mạng xã hội ngày càng cao, đồng thời lòng tin vào truyền thông chính thống đang suy giảm --- hai xu hướng này cùng làm gia tăng mức độ nguy hiểm của tin giả.
 
-Ví dụ trình bày logo của đơn vị:
+Chính vì vậy, bài toán \textbf{tự động phát hiện tin tức giả mạo} dựa trên nội dung văn bản, sử dụng các phương pháp học máy (Machine Learning) và học sâu (Deep Learning), đã trở thành một trong những chủ đề nghiên cứu sôi nổi nhất của Xử lý ngôn ngữ tự nhiên (NLP) trong thập kỷ qua. Đề tài này được thực hiện trong khuôn khổ học phần Machine Learning nhằm vận dụng các kiến thức của học phần vào một bài toán thực tế, có bộ dữ liệu chuẩn quốc tế để so sánh.
 
-\begin{figure}[H]
-    \centering
-    % Thay logo minh họa dưới đây bằng logo của doanh nghiệp thực tập.
-    \includegraphics[width=0.25\textwidth]{images/logo-dai-nam.png}
-    \caption{Logo đơn vị (hình minh họa)}
-    \label{fig:logo-don-vi}
-    \Nguon{Trường Đại học Đại Nam}
-\end{figure}
+\section{Hiện trạng tin tức giả mạo}
 
-\section{Cơ cấu tổ chức}
+\subsection{Định nghĩa và phân loại thông tin sai lệch}
 
-Sinh viên trình bày sơ đồ tổ chức của doanh nghiệp hoặc mô tả cơ cấu tổ chức bằng văn bản.
+Trong nghiên cứu khoa học, các dạng thông tin sai lệch thường được phân biệt theo \textbf{ý định của người tạo ra} như sau:
 
 \begin{itemize}
-    \item Các phòng ban chính trong doanh nghiệp.
-    \item Chức năng, nhiệm vụ của từng phòng ban.
-    \item Quy mô nhân sự.
-    \item Các công nghệ, nền tảng hoặc dịch vụ doanh nghiệp đang sử dụng.
+    \item \textbf{Tin giả} (fake news/disinformation): nội dung bịa đặt hoặc sai lệch một cách \textit{cố ý}, được thiết kế để trông giống tin thật nhằm đánh lừa người đọc.
+    \item \textbf{Nội dung gây hiểu lầm} (misinformation): nội dung sai lệch hoặc thiếu chính xác nhưng được chia sẻ \textit{không có ý định} lừa dối, ví dụ người dùng chia sẻ tin không kiểm chứng.
+    \item \textbf{Nội dung thao túng} (malinformation): thông tin có thật nhưng bị lộ hoặc bóp méo nhằm gây hại cho cá nhân, tổ chức.
+    \item \textbf{Tiêu đề câu view} (clickbait): tiêu đề giật gân, khiến người đọc nhấp vào bài viết dù nội dung không tương xứng.
+    \item \textbf{Tin châm biếm} (satire): nội dung hư cấu rõ ràng mang tính trào phúng, không nhằm lừa dối --- tuy vậy khi bị cắt ngữ cảnh, tin châm biếm vẫn có thể lan truyền như tin thật.
 \end{itemize}
 
-Ví dụ chèn hình:
+Trong phạm vi đề tài, đối tượng nghiên cứu tập trung vào \textbf{tin giả dạng văn bản} (fake news): các bài viết bịa đặt hoàn toàn hoặc sai lệch nghiêm trọng so với sự thật, xuất hiện trên các trang tin điện tử và mạng xã hội.
 
-\begin{sodo}[H]
-    \centering
-    % Thay thế bằng hình thật nếu có:
-    % \includegraphics[width=0.8\textwidth]{images/so-do-to-chuc.png}
+\subsection{Tác hại của tin tức giả mạo}
 
-    \fbox{\parbox[c][5cm][c]{0.8\textwidth}{\centering Chèn sơ đồ tổ chức tại đây}}
-
-    \SodoCaption{Tổ chức doanh nghiệp}{Sinh viên tự xây dựng}
-    \label{fig:so-do-to-chuc}
-\end{sodo}
-
-\section{Phòng ban thực tập và vị trí công việc}
-
-Sinh viên trình bày các nội dung sau:
+Tin tức giả mạo gây ra nhiều hậu quả nghiêm trọng trên các lĩnh vực của đời sống:
 
 \begin{itemize}
-    \item Tên phòng ban tiếp nhận sinh viên thực tập.
-    \item Vị trí thực tập: Intern Developer, Tester, IT Support, Data Analyst, Business Analyst, v.v.
-    \item Người hướng dẫn tại doanh nghiệp nếu có.
-    \item Các nhiệm vụ chính được giao trong quá trình thực tập.
-    \item Môi trường làm việc, công cụ và quy trình làm việc của phòng ban.
+    \item \textbf{Y tế --- sức khỏe}: Trong đại dịch COVID-19, ``bão thông tin'' (infodemic) với hàng loạt tin giả về thuốc chữa bệnh, vắc-xin, số liệu dịch đã khiến nhiều người thực hiện hành vi nguy hiểm (tự chữa bằng các biện pháp không khoa học, từ chối tiêm chủng) và cản trở công tác phòng chống dịch.
+    \item \textbf{Chính trị --- xã hội}: Tin giả được sử dụng như một ``vũ khí'' thông tin trong các kỳ bầu cử (Ví dụ: kỳ bầu cử Mỹ 2016, bầu cử Pháp 2017) để thao túng dư luận, chia rẽ xã hội, làm xói mòn lòng tin vào thể chế.
+    \item \textbf{Kinh tế}: Tin giả về giá cả hàng hóa, tình hình doanh nghiệp, thị trường tài chính có thể gây hỗn loạn thị trường, gây thiệt hại cho doanh nghiệp và người tiêu dùng. Các tin đồn thất thiệt về lương thực, thực phẩm cũng tạo ra hiện tượng tích trữ, chênh lệch giá không cần thiết.
+    \item \textbf{Cá nhân}: Tin giả bôi nhọ, vu khống cá nhân gây tổn hại nghiêm trọng về danh dự, nhân phẩm, thậm chí dẫn tới các hậu quả tâm lý, pháp lý lâu dài cho nạn nhân.
 \end{itemize}
+
+Điểm đáng lo ngại là tin giả lan truyền \textbf{nhanh hơn tin thật}: các nghiên cứu về mạng lan truyền trên Twitter cho thấy tin giả được chia sẻ lại nhiều hơn, sâu hơn và nhanh hơn tin thật, một phần vì nội dung giật gân, cảm xúc mạnh dễ kích thích sự chia sẻ của người dùng. Điều này khiến việc phát hiện và ngăn chặn tin giả càng trở nên cấp bách.
+
+\subsection{Tin tức giả mạo tại Việt Nam}
+
+Tại Việt Nam, hiện tượng tin giả, tin sai lệch trên môi trường mạng cũng diễn ra phức tạp, đặc biệt trong các giai đoạn nhạy cảm như đại dịch COVID-19, thiên tai, bão lũ, các sự kiện về giá cả, đất đai, an ninh trật tự. Nhiều vụ việc tin giả lan truyền trên mạng xã hội đã gây hoang mang dư luận và bị cơ quan chức năng xử lý nghiêm theo pháp luật.
+
+Về khung pháp lý, hệ thống văn bản quản lý thông tin trên mạng ngày càng hoàn thiện, có thể kể đến:
+
+\begin{itemize}
+    \item Luật An ninh mạng (2018) quy định các hành vi bị cấm trên không gian mạng, trong đó có việc đưa thông tin sai sự thật, thông tin xuyên tạc.
+    \item Nghị định 15/2020/NĐ-CP quy định xử phạt hành chính trong lĩnh vực bưu chính, viễn thông, tần số vô tuyến điện, công nghệ thông tin và truyền thông số, trong đó phạt hành vi giả mạo, đe dọa, lừa dối, chỉnh sửa, làm sai lệch, che giấu thông tin trên môi trường mạng.
+    \item Bộ luật Hình sự (2015, sửa đổi 2017) với tội danh thông tin sai sự thật trên mạng máy tính hoặc mạng viễn thông (Điều 288).
+\end{itemize}
+
+Song song với công cụ pháp lý, việc xây dựng các \textbf{giải pháp công nghệ} hỗ trợ phát hiện và cảnh báo tin giả tự động là một trong những mảnh ghép quan trọng của tổng thể chống tin giả, giúp cơ quan quản lý, nền tảng mạng xã hội và chính người dùng phát hiện tin giả ở giai đoạn sớm.
+
+\section{Bài toán phát hiện tin tức giả mạo}
+
+\subsection{Phát biểu bài toán}
+
+Bài toán phát hiện tin tức giả mạo có thể phát biểu dưới dạng bài toán \textbf{phân loại văn bản nhị phân} như sau:
+
+\begin{quote}
+\textit{Cho trước một văn bản tin tức $x$ (bao gồm tiêu đề, nội dung bài viết), hãy xây dựng hàm dự đoán $f(x) \in \{0, 1\}$, trong đó $f(x) = 0$ tương ứng với tin thật (real/true) và $f(x) = 1$ tương ứng với tin giả (fake).}
+\end{quote}
+
+Đây là một dạng bài toán học máy có giám sát (supervised learning) điển hình: từ bộ dữ liệu tin tức đã được gán nhãn thật/giả, mô hình học mối quan hệ giữa đặc trưng của văn bản và nhãn, sau đó dự đoán nhãn cho các bài viết mới chưa thấy trước đó.
+
+\subsection{Các hướng tiếp cận chính}
+
+Trong tài liệu nghiên cứu, các phương pháp phát hiện tin giả được phân loại theo \textbf{nguồn tín hiệu} được khai thác:
+
+\begin{enumerate}
+    \item \textbf{Dựa trên nội dung} (content-based): phân tích chính văn bản của bài viết --- văn phong, từ ngữ, cấu trúc câu, cảm xúc, độ tương đồng giữa tiêu đề và nội dung. Đây là hướng phổ biến nhất, phù hợp khi chỉ có bài viết mà không có dữ liệu mạng xã hội. Đề tài theo hướng này.
+    \item \textbf{Dựa trên mạng lan truyền} (propagation-based): phân tích đồ thị lan truyền của bài viết trên mạng xã hội (ai chia sẻ, ai bình luận, đường lan truyền như thế nào), vì tin giả thường có mô hình lan truyền khác thường.
+    \item \textbf{Dựa trên đặc điểm người dùng} (user-based): khai thác độ tin cậy của tài khoản đăng tải (tài khoản ảo, lịch sử đăng tin giả).
+    \item \textbf{Dựa trên kiểm chứng ngoại vi} (fact-checking): đối chiếu các mệnh đề trong bài viết với cơ sở dữ kiện chuẩn hoặc các bài viết của nguồn uy tín; tốn chi phí, khó tự động hóa hoàn toàn.
+\end{enumerate}
+
+Trong đó, hướng \textbf{dựa trên nội dung} là khả thi nhất với sinh viên thực hiện đề tài học phần: dữ liệu dễ thu thập (bộ dữ liệu công khai), không cần dữ liệu cá nhân của người dùng, và cho phép tập trung nghiên cứu các phương pháp học máy, học sâu cho văn bản --- đúng trọng tâm kiến thức của học phần.
+
+\subsection{Thách thức của bài toán}
+
+Dù phát biểu đơn giản, bài toán phát hiện tin giả có nhiều thách thức đáng kể:
+
+\begin{itemize}
+    \item \textbf{Tin giả ngày càng tinh vi}: được viết mô phỏng gần giống văn phong báo chí chính thống, có trích nguồn, hình ảnh, khiến việc phân biệt bằng mắt thường rất khó khăn và các mô hình học theo văn phong dễ ``hụt''.
+    \item \textbf{Đa dạng ngôn ngữ}: ngôn ngữ tự nhiên có tính nhiễu cao --- viết tắt, lỗi chính tả, cảm thán, châm biếm, đa nghĩa. Với tiếng Việt còn có vấn đề tách từ không phân định bằng khoảng trắng.
+    \item \textbf{Ranh giới mờ}: phân biệt tin giả với tin châm biếm, tin gây hiểu lầm, tin chủ quan không phải lúc nào cũng rõ ràng; ranh giới còn phụ thuộc bối cảnh thời gian, văn hóa.
+    \item \textbf{Phân bố dữ liệu lệch và mở}: tin giả liên tục đổi hình thức, bộ dữ liệu huấn luyện có thể sớm lỗi thời (concept drift); mô hình cần được huấn luyện lại định kỳ.
+    \item \textbf{Yêu cầu tính khả giải thích}: các quyết định gắn cờ ``tin giả'' cần có cơ sở để con người kiểm tra lại, không chỉ một con số dự đoán đơn thuần.
+\end{itemize}
+
+\section{Tổng quan các nghiên cứu liên quan}
+
+\subsection{Giai đoạn sử dụng học máy truyền thống}
+
+Những nghiên cứu đầu tiên tiếp cận bài toán như một bài toán phân loại văn bản kinh điển, với quy trình: tiền xử lý văn bản $\rightarrow$ trích xuất đặc trưng $\rightarrow$ phân loại.
+
+\textbf{Ahmed, Traore và Saad} (2017) \cite{ahmed2017} là công trình được nhắc tới nhiều nhất khi xây dựng bộ dữ liệu ISOT Fake News (Quỹ nghiên cứu của Đại học Victoria, Canada). Bộ dữ liệu gồm hơn 44.000 bài tin tức tiếng Anh được gán nhãn thật/giả (trong tệp phân phối trên Kaggle), thu thập từ các nguồn công khai. Nhóm tác giả thực nghiệm với kỹ thuật trích xuất đặc trưng n-gram (TF-IDF) kết hợp các mô hình học máy truyền thống; kết quả cho thấy mô hình \textit{Passive Aggressive} đạt độ chính xác khoảng 93\%. Bộ dữ liệu này được sử dụng rộng rãi làm chuẩn (benchmark) trong các nghiên cứu sau đó và cũng là bộ dữ liệu của đề tài này.
+
+\textbf{Shu và cộng sự} (2017) \cite{shu2017} công bố tổng quan hệ thống các hướng tiếp cận khai phá dữ liệu cho phát hiện tin giả trên mạng xã hội, phân loại phương pháp theo: dữ liệu (tin tức, mạng lan truyền), mô hình (học máy, học sâu) và nguồn thông tin (nội dung, đặc điểm người dùng). Công trình này cung cấp bản đồ nghiên cứu toàn diện và khẳng định xu hướng chuyển dịch từ học máy truyền thống sang học sâu.
+
+Một số nghiên cứu khác trong giai đoạn này dùng các mô hình như Decision Tree, Random Forest, SVM với đặc trưng túi từ, TF-IDF, phân tích cảm xúc (sentiment), số lượng từ in HOA, dấu chấm than --- các đặc trưng ``thủ công'' (hand-crafted features). Hạn chế chung là chất lượng phụ thuộc rất lớn vào bộ đặc trưng được thiết kế, khó mở rộng sang ngôn ngữ, chủ đề mới.
+
+\subsection{Giai đoạn sử dụng học sâu}
+
+Các mô hình học sâu cho văn bản xuất phát từ khả năng \textbf{tự học biểu diễn} (representation learning): thay vì thiết kế đặc trưng thủ công, mạng nơ-ron học trực tiếp vector biểu diễn của từ và ngữ cảnh từ dữ liệu.
+
+\textbf{Mikolov và cộng sự} (2013) \cite{word2vec} đề xuất Word2Vec --- phương pháp học vector biểu diễn từ (word embedding) phản ánh quan hệ ngữ nghĩa giữa các từ, cho phép tính toán được các quan hệ ngữ nghĩa kiểu $v_{\text{king}} - v_{\text{man}} + v_{\text{woman}} \approx v_{\text{queen}}$ (``vua'' $-$ ``đàn ông'' $+$ ``đàn bà'' $\approx$ ``nữ hoàng''). Đây là nền tảng cho lớp Embedding trong mọi mô hình học sâu xử lý văn bản.
+
+\textbf{Kim} (2014) \cite{kim2014} chứng minh mạng nơ-ron tích chập (CNN) kết hợp vector từ huấn luyện sẵn đạt hiệu năng cạnh tranh trên nhiều tác vụ phân loại câu. Với bài toán phát hiện tin giả, các bộ lọc cỡ 3--5 từ của CNN hiệu quả trong việc bắt các cụm từ văn phong giật gân đặc trưng.
+
+\textbf{Hochreiter và Schmidhuber} (1997) \cite{lstm} giới thiệu mạng LSTM giải quyết vấn đề tiêu biến gradient (vanishing gradient) của mạng nơ-ron hồi tiếp (RNN), cho phép mô hình hóa \textbf{phụ thuộc dài hạn} trong chuỗi. Với tin tức --- dạng văn bản dài, các dấu hiệu nhận biết tin giả rải rác khắp bài viết --- LSTM và biến thể Bi-LSTM đã cho kết quả vượt trội: nhiều nghiên cứu trên bộ dữ liệu ISOT đạt độ chính xác 98--99\%.
+
+\textbf{Vaswani và cộng sự} (2017) \cite{transformer} giới thiệu kiến trúc Transformer với cơ chế chú ý (attention), thay thế hoàn toàn cấu trúc hồi tiếp bằng các phép chú ý song song. Từ đó, các mô hình ngôn ngữ huấn luyện trước như \textbf{BERT} \cite{bert} được tinh chỉnh (fine-tune) cho phân loại văn bản và đạt kết quả tốt nhất hiện nay trên nhiều bộ dữ liệu phát hiện tin giả (thường trên 99\%). Đổi lại, các mô hình này có hàng trăm triệu tham số, đòi hỏi tài nguyên tính toán lớn và khó diễn giải.
+
+\subsection{So sánh các hướng tiếp cận}
+
+\begin{table}[H]
+\centering
+\caption{So sánh các hướng tiếp cận phát hiện tin giả dạng văn bản}
+\label{tab:so-sanh-huong}
+\begin{tabular}{|p{4cm}|p{3.4cm}|p{3.4cm}|p{3.4cm}|}
+\hline
+\textbf{Tiêu chí} & \textbf{ML truyền thống + TF-IDF} & \textbf{Học sâu (CNN/LSTM)} & \textbf{Transformer (BERT)} \\
+\hline
+Chất lượng dự đoán & Trung bình --- khá & Khá --- tốt & Tốt nhất \\
+\hline
+Đặc trưng đầu vào & Thiết kế thủ công (TF-IDF) & Tự học từ dữ liệu (embedding) & Tự học + kiến thức huấn luyện trước \\
+\hline
+Tài nguyên huấn luyện & CPU, giây --- phút & GPU, phút --- giờ & GPU mạnh, giờ --- ngày \\
+\hline
+Khả năng nắm ngữ cảnh & Bỏ qua thứ tự từ & Ngữ cảnh tuần tự & Ngữ cảnh hai chiều toàn văn \\
+\hline
+Khả năng diễn giải & Khá (trọng số từ) & Thấp hơn & Thấp \\
+\hline
+Độ phức tạp triển khai & Thấp & Trung bình & Cao \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tổng hợp từ \cite{shu2017} và các nghiên cứu liên quan}
+\end{table}
+
+Bảng \ref{tab:so-sanh-huong} cho thấy: \textit{học máy truyền thống} đơn giản, nhanh nhưng bị giới hạn bởi bộ đặc trưng; \textit{Transformer} mạnh nhất nhưng nặng; \textit{học sâu với LSTM} nằm ở điểm cân bằng --- đủ mạnh để nắm ngữ cảnh dài, vẫn có thể huấn luyện bằng GPU phổ thông (như Google Colab miễn phí). Chính lý do này khiến đề tài chọn \textbf{LSTM} làm mô hình chính, dùng các mô hình truyền thống làm tham chiếu.
+
+\section{Mục tiêu, phạm vi và phương pháp của đề tài}
+
+\textbf{Mục tiêu:} Xây dựng mô hình tự động phân loại tin tức thật/giả trên dữ liệu văn bản tiếng Anh, sử dụng mạng nơ-ron học sâu LSTM, hướng tới độ chính xác trên 99\% và so sánh công bằng với các mô hình học máy truyền thống trên cùng bộ dữ liệu; đồng thời rèn luyện quy trình xây dựng một bài toán học máy hoàn chỉnh từ dữ liệu thô tới sản phẩm demo.
+
+\textbf{Phạm vi:}
+\begin{itemize}
+    \item Sử dụng bộ dữ liệu công khai \textbf{ISOT Fake News} \cite{dataset} (Kaggle) gồm hơn 44.000 bài tin tức tiếng Anh được gán nhãn thật/giả.
+    \item Phân loại dựa trên nội dung văn bản (tiêu đề + nội dung bài viết), không sử dụng thông tin về người đăng, hình ảnh hay mạng lan truyền.
+    \item Mô hình chính là mạng nơ-ron \textbf{LSTM} với lớp Embedding; mô hình tham chiếu là Naive Bayes, Logistic Regression và Passive Aggressive với đặc trưng TF-IDF.
+    \item Đánh giá bằng Accuracy, Precision, Recall, F1-score trên tập kiểm tra; xây dựng ứng dụng demo kiểm tra tin tức bằng Streamlit.
+\end{itemize}
+
+\textbf{Phương pháp thực hiện:} Kết hợp hai phương pháp chính:
+
+\begin{itemize}
+    \item \textit{Nghiên cứu tài liệu}: hệ thống hóa kiến thức về học máy, học sâu, NLP từ giáo trình, bài báo khoa học và tài liệu chuyên ngành, làm cơ sở lý thuyết cho thiết kế mô hình.
+    \item \textit{Thực nghiệm}: xây dựng toàn bộ quy trình trên bộ dữ liệu thực tế --- tiền xử lý, huấn luyện các mô hình, đánh giá, phân tích lỗi và so sánh --- bằng ngôn ngữ Python với các thư viện scikit-learn, TensorFlow/Keras, NLTK.
+\end{itemize}
+
+\section{Đóng góp và kết cấu báo cáo}
+
+\textbf{Đóng góp chính của đề tài:}
+
+\begin{itemize}
+    \item Hệ thống hóa cơ sở lý thuyết về phát hiện tin giả dạng văn bản theo một văn bản thống nhất, dễ theo dõi cho người mới học.
+    \item Xây dựng quy trình hoàn chỉnh --- từ dữ liệu thô, tiền xử lý, vector hóa, huấn luyện tới đánh giá --- cho mô hình LSTM trên bộ dữ liệu chuẩn ISOT, kèm mã nguồn tái lập được.
+    \item So sánh định lượng mô hình LSTM với ba mô hình học máy truyền thống trên cùng điều kiện dữ liệu, cho thấy lợi ích rõ rệt của học sâu với văn bản dài.
+    \item Phân tích nhóm lỗi phân loại phổ biến, chỉ ra giới hạn của phương pháp dựa trên văn phong và gợi ý hướng phát triển.
+\end{itemize}
+
+\textbf{Kết cấu báo cáo} gồm 3 chương:
+
+\begin{itemize}
+    \item \textbf{Chương 1: Tổng quan đề tài} --- hiện trạng tin tức giả mạo, bài toán nghiên cứu, tổng quan nghiên cứu liên quan, mục tiêu và phạm vi của đề tài.
+    \item \textbf{Chương 2: Cơ sở lý thuyết} --- các khái niệm nền tảng về học máy, NLP, trích xuất đặc trưng văn bản, mô hình học máy truyền thống, mạng nơ-ron hồi tiếp RNN, LSTM, CNN và các độ đo đánh giá.
+    \item \textbf{Chương 3: Xây dựng mô hình phát hiện tin tức giả mạo} --- mô tả và thống kê bộ dữ liệu, quy trình tiền xử lý, thiết kế thí nghiệm, kiến trúc mô hình, kết quả huấn luyện, đánh giá, phân tích lỗi và ứng dụng demo.
+\end{itemize}
+
+Cuối báo cáo là phần Kết luận tổng hợp những gì đạt được và định hướng phát triển, tiếp theo là Danh mục tài liệu tham khảo và Phụ lục trình bày mã nguồn chính, hướng dẫn cài đặt và chạy lại thí nghiệm.

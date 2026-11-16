@@ -1,17 +1,143 @@
 \appendix
 \UnnumberedChapter{PHỤ LỤC}
 
-\section*{Phụ lục 1. Hình ảnh minh họa}
+\section*{Phụ lục 1. Mã nguồn chính của mô hình}
 
-Sinh viên chèn hình ảnh minh họa, ảnh chụp màn hình sản phẩm hoặc giao diện hệ thống nếu được phép công bố.
+Phần mã nguồn dưới đây trình bày các bước cốt lõi: tiền xử lý, xây dựng và huấn luyện mô hình LSTM bằng Python (TensorFlow/Keras). Mã nguồn đầy đủ được lưu trữ trong kho GitHub của nhóm (xem Phụ lục 2).
 
-\section*{Phụ lục 2. Tài liệu, mã nguồn hoặc liên kết liên quan}
+\begin{enumerate}
+    \item Tiền xử lý dữ liệu:
+\end{enumerate}
 
-Sinh viên có thể bổ sung:
+{\small
+\begin{verbatim}
+import pandas as pd
+import re, string
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
+
+fake = pd.read_csv("Fake.csv");  fake["label"] = 1
+true = pd.read_csv("True.csv");  true["label"] = 0
+data = pd.concat([fake, true]).sample(frac=1, random_state=42)
+data["text"] = data["title"] + " " + data["text"]
+
+stop_words = set(stopwords.words("english"))
+stemmer = PorterStemmer()
+
+def clean_text(s):
+    s = re.sub(r"https?://\S+|www\.\S+", " ", s)
+    s = re.sub(r"<.*?>", " ", s)
+    s = s.lower().translate(str.maketrans("", "", string.punctuation))
+    s = re.sub(r"\d+", " ", s)
+    words = [w for w in s.split() if w not in stop_words]
+    return " ".join(stemmer.stem(w) for w in words)
+
+data["text"] = data["text"].apply(clean_text)
+\end{verbatim}
+}
+
+\begin{enumerate}
+    \setcounter{enumi}{1}
+    \item Vector hóa, xây dựng và huấn luyện mô hình LSTM:
+\end{enumerate}
+
+{\small
+\begin{verbatim}
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import (Embedding, LSTM, Dropout,
+                                     Dense)
+from tensorflow.keras.callbacks import EarlyStopping
+
+X_train, X_test, y_train, y_test = train_test_split(
+    data["text"], data["label"],
+    test_size=0.25, random_state=42)
+
+tokenizer = Tokenizer(num_words=10000)
+tokenizer.fit_on_texts(X_train)
+pad = lambda s: pad_sequences(
+    tokenizer.texts_to_sequences(s), maxlen=256)
+
+model = Sequential([
+    Embedding(10000, 64),
+    LSTM(64),
+    Dropout(0.5),
+    Dense(32, activation="relu"),
+    Dense(1, activation="sigmoid")
+])
+
+model.compile(optimizer="adam",
+              loss="binary_crossentropy",
+              metrics=["accuracy"])
+
+model.fit(pad(X_train), y_train, validation_data=(
+              pad(X_test), y_test),
+    epochs=10, batch_size=64,
+    callbacks=[EarlyStopping(patience=2,
+                             restore_best_weights=True)])
+\end{verbatim}
+}
+
+\begin{enumerate}
+    \setcounter{enumi}{2}
+    \item Đánh giá mô hình:
+\end{enumerate}
+
+{\small
+\begin{verbatim}
+from sklearn.metrics import (classification_report,
+                             confusion_matrix)
+
+y_pred = (model.predict(pad(X_test)) >= 0.5).astype(int)
+print(classification_report(y_test, y_pred,
+      target_names=["Thật", "Giả"]))
+print(confusion_matrix(y_test, y_pred))
+\end{verbatim}
+}
+
+\section*{Phụ lục 2. Hướng dẫn cài đặt và chạy lại thí nghiệm}
+
+Nhóm cung cấp hướng dẫn để tái lập toàn bộ kết quả trong báo cáo:
+
+\begin{enumerate}
+    \item \textbf{Cài đặt môi trường} (khuyến nghị Python 3.10):
+\end{enumerate}
+
+{\small
+\begin{verbatim}
+python -m venv venv
+venv\Scripts\activate        # Windows
+venv/bin/activate            # Linux/Mac
+
+pip install pandas numpy nltk scikit-learn
+pip install tensorflow matplotlib seaborn streamlit
+\end{verbatim}
+}
+
+\begin{enumerate}
+    \setcounter{enumi}{1}
+    \item \textbf{Tải dữ liệu}: tải bộ ``Fake and Real News Dataset'' từ Kaggle (\cite{dataset}), đặt hai tệp Fake.csv và True.csv vào thư mục data/.
+    \item \textbf{Chạy thí nghiệm}:
+\end{enumerate}
+
+{\small
+\begin{verbatim}
+python train_and_evaluate.py   # huan luyen 3 mo hinh truyen thong + LSTM,
+                               # danh gia va xuat bieu do vao results/
+streamlit run app.py           # chay giao dien demo
+\end{verbatim}
+}
+
+Kết quả mỗi lần chạy được ghi ra thư mục results/ gồm: bảng số liệu, biểu đồ loss/accuracy, ma trận nhầm lẫn và đường cong ROC dùng cho chương 3.
+
+\section*{Phụ lục 3. Tài liệu, mã nguồn và liên kết liên quan}
 
 \begin{itemize}
-    \item Link GitHub/GitLab nếu được phép.
-    \item Tài liệu thiết kế.
-    \item Tài liệu hướng dẫn sử dụng.
-    \item File cài đặt hoặc tài liệu bàn giao.
+    \item Bộ dữ liệu: ISOT Fake News (Fake and Real News Dataset), tải từ Kaggle: \url{https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset}.
+    \item Mã nguồn thí nghiệm: nhóm bổ sung link GitHub, ví dụ \url{https://github.com/<tai-khoan>/fake-news-detection}.
+    \item Tài liệu tham khảo chính: bài báo ISOT \cite{ahmed2017}, bài báo LSTM \cite{lstm}, bài báo Word2Vec \cite{word2vec} và bài báo CNN cho phân loại câu \cite{kim2014}.
+    \item Sổ ghi chép quá trình thí nghiệm: toàn bộ mã nguồn Python của nhóm (tệp train\_and\_evaluate.py huấn luyện và đánh giá, tệp experiments.py chạy các kịch bản E3--E5, tệp app.py giao diện demo Streamlit) kèm log huấn luyện Keras và các biểu đồ kết quả.
 \end{itemize}

@@ -1,69 +1,507 @@
-\chapter{KẾT QUẢ THỰC TẬP}
+\chapter[XÂY DỰNG MÔ HÌNH PHÁT HIỆN TIN TỨC GIẢ MẠO]{Xây dựng mô hình phát hiện tin tức giả mạo}
 
-\section{Tóm tắt nội dung đã thực hiện}
+Chương này trình bày toàn bộ quá trình xây dựng mô hình phát hiện tin tức giả mạo: từ mô tả bộ dữ liệu, quy trình tiền xử lý, thiết kế thí nghiệm, kiến trúc mô hình, tới kết quả huấn luyện, đánh giá, phân tích lỗi và ứng dụng demo.
 
-Sinh viên tóm tắt toàn bộ các nội dung đã thực hiện trong quá trình thực tập, bao gồm các công việc chuyên môn, công việc hỗ trợ, các buổi họp, trao đổi nghiệp vụ hoặc các hoạt động khác tại doanh nghiệp.
+\section{Mô tả bộ dữ liệu}
 
-\section{Sản phẩm hoặc dự án thực tế đã tham gia}
+\subsection{Nguồn gốc bộ dữ liệu}
 
-Sinh viên mô tả sản phẩm, module, chức năng hoặc dự án thực tế đã tham gia. Nội dung có thể bao gồm:
+Đề tài sử dụng bộ dữ liệu \textbf{ISOT Fake News} \cite{ahmed2017}, được nhóm nghiên cứu Information Security and Object Technology (ISOT), Trường Đại học Victoria (Canada) công bố và được chia sẻ rộng rãi trên nền tảng Kaggle \cite{dataset}. Bộ dữ liệu gồm hai tệp tin:
 
 \begin{itemize}
-    \item Tên dự án hoặc sản phẩm.
-    \item Mục tiêu của dự án.
-    \item Vai trò của sinh viên trong dự án.
-    \item Các chức năng hoặc nhiệm vụ đã thực hiện.
-    \item Công nghệ, ngôn ngữ lập trình, framework, cơ sở dữ liệu hoặc công cụ sử dụng.
+    \item \textbf{Fake.csv}: 23.481 bài tin tức giả, thu thập từ các trang web chuyên đăng tin không xác thực như LosingForReal, Breitbart, NewswithViews,\ldots
+    \item \textbf{True.csv}: 21.417 bài tin tức thật, thu thập chủ yếu từ báo chí chính thống như Reuters, The Wall Street Journal, Bloomberg,\ldots
 \end{itemize}
+
+Lưu ý: con số trong tệp tải về từ Kaggle (23.481 + 21.417 = 44.898 bài) có thể chênh lệch nhẹ so với mô tả ban đầu của nhóm tác giả \cite{ahmed2017} do bộ dữ liệu được cập nhật theo thời gian.
+
+Mỗi bản ghi gồm các trường thông tin được mô tả trong bảng \ref{tab:mo-ta-du-lieu}.
 
 \begin{table}[H]
 \centering
-\caption{Danh sách công nghệ sử dụng trong quá trình thực tập}
-\label{tab:cong-nghe-su-dung}
-\begin{tabular}{|c|p{4cm}|p{8cm}|}
+\caption{Mô tả các trường dữ liệu trong bộ dữ liệu ISOT}
+\label{tab:mo-ta-du-lieu}
+\begin{tabular}{|p{3cm}|p{5cm}|p{4.5cm}|}
 \hline
-\textbf{STT} & \textbf{Công nghệ/Công cụ} & \textbf{Mục đích sử dụng} \\
+\textbf{Trường dữ liệu} & \textbf{Mô tả} & \textbf{Ví dụ} \\
 \hline
-1 & Git/GitHub & Quản lý mã nguồn và phối hợp làm việc nhóm. \\
+title & Tiêu đề bài viết & ``WATCH: Firefighter Catches Baby Dropped From Building'' \\
 \hline
-2 & Visual Studio Code & Soạn thảo mã nguồn. \\
+text & Nội dung toàn văn bài viết & ``The latest round of bogus testimony\ldots'' \\
 \hline
-3 & MySQL/\allowbreak PostgreSQL & Lưu trữ và quản lý dữ liệu. \\
+subject & Chủ đề bài viết & politics, world news, government news, left-news, US News, Middle-east \\
+\hline
+date & Ngày đăng & April 21, 2017 \\
 \hline
 \end{tabular}
-\Nguon{Sinh viên tổng hợp}
+\Nguon{Bộ dữ liệu ISOT Fake News \cite{ahmed2017}}
 \end{table}
 
-\section{Kỹ năng đã rèn luyện được}
+\subsection{Thống kê mô tả dữ liệu}
 
-\subsection{Kỹ năng chuyên môn}
+Gộp hai tệp được \textbf{44.898 bài viết}. Nhóm tiến hành thống kê một số đặc điểm cơ bản của bộ dữ liệu (bảng \ref{tab:thong-ke-du-lieu}); các chỉ số tính trên bộ dữ liệu sau khi loại bỏ trùng lặp được trình bày ngay dưới bảng.
+
+\begin{table}[H]
+\centering
+\caption{Thống kê mô tả bộ dữ liệu ISOT}
+\label{tab:thong-ke-du-lieu}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Chỉ số} & \textbf{Tin thật} & \textbf{Tin giả} \\
+\hline
+Số lượng bài viết (tệp gốc) & 21.417 & 23.481 \\
+\hline
+Sau loại bỏ trùng lặp / rỗng & 21.197 & 17.908 \\
+\hline
+Tỷ lệ trong bộ dữ liệu sử dụng & 54,2\% & 45,8\% \\
+\hline
+Số từ trung bình / bài viết & 396 & 438 \\
+\hline
+Số chủ đề (subject) & 2 & 6 \\
+\hline
+Khoảng thời gian đăng & 2016--2017 & 2015--2017 \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thống kê trên dữ liệu ISOT}
+\end{table}
+
+Sau bước kiểm tra trùng lặp và giá trị rỗng, bộ dữ liệu sử dụng gồm \textbf{39.105 bài viết} (loại bỏ 5.573 bài giả và 220 bài thật trùng lặp), hai lớp ở trạng thái gần cân bằng (54,2\%/45,8\%) nên không cần áp dụng các kỹ thuật cân bằng dữ liệu (oversampling, SMOTE\ldots). Bộ dữ liệu được chia ngẫu nhiên theo tỷ lệ \textbf{75\% tập huấn luyện} (29.328 bài) và \textbf{25\% tập kiểm tra} (9.777 bài). Quan sát đáng chú ý: tin giả có độ dài trung bình lớn hơn tin thật (438 so với 396 từ) và đa dạng chủ đề hơn hẳn (6 so với 2 chủ đề) --- đây là những đặc điểm có thể giúp mô hình phân biệt hai lớp.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/phan-bo-do-dai.png}
+    \caption{Phân bố độ dài bài viết của hai lớp tin thật và tin giả}
+    \label{fig:phan-bo-do-dai}
+    \Nguon{Nhóm tự thực hiện trên dữ liệu ISOT}
+\end{figure}
+
+Ngoài ra, nhóm kiểm tra dữ liệu trùng lặp và giá trị thiếu; các bài viết trùng lặp hoặc có nội dung rỗng được loại bỏ trước khi chia tập huấn luyện/kiểm tra để tránh rò rỉ dữ liệu (data leakage) giữa hai tập.
+
+\section{Quy trình xử lý tổng thể}
+
+Quy trình xây dựng mô hình trong đề tài gồm 6 bước, được trình bày tại sơ đồ \ref{sodo:quy-trinh}.
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[>=stealth, font=\small]
+        \node[draw, text width=3.2cm, align=center] (data) at (0,0)
+            {Thu thập dữ liệu\\ ISOT Fake News};
+        \node[draw, text width=3.2cm, align=center] (pre) at (4.4,0)
+            {Tiền xử lý\\ văn bản};
+        \node[draw, text width=3.2cm, align=center] (feat) at (8.8,0)
+            {Vector hóa\\ (Tokenizer, Padding)};
+        \node[draw, text width=3.2cm, align=center] (train) at (8.8,-2.6)
+            {Huấn luyện\\ mô hình LSTM};
+        \node[draw, text width=3.2cm, align=center] (eval) at (4.4,-2.6)
+            {Đánh giá trên\\ tập kiểm tra};
+        \node[draw, text width=3.2cm, align=center] (out) at (0,-2.6)
+            {Kết quả:\\ Tin thật / Tin giả};
+        \draw[->, thick] (data) -- (pre);
+        \draw[->, thick] (pre) -- (feat);
+        \draw[->, thick] (feat) -- (train);
+        \draw[->, thick] (train) -- (eval);
+        \draw[->, thick] (eval) -- (out);
+    \end{tikzpicture}
+    \SodoCaption{Quy trình xây dựng mô hình phát hiện tin tức giả mạo}{Nhóm tự xây dựng}
+    \label{sodo:quy-trinh}
+\end{sodo}
+
+\section{Tiền xử lý dữ liệu}
+
+Bộ dữ liệu gốc là văn bản tự do, chứa nhiều yếu tố nhiễu không phục vụ việc phân loại. Các bước tiền xử lý được thực hiện như sau:
+
+\begin{enumerate}
+    \item \textbf{Gộp và gán nhãn}: đọc hai tệp Fake.csv và True.csv, gán nhãn $1$ cho tin giả, $0$ cho tin thật; giữ lại hai trường title và text, ghép thành một trường nội dung.
+    \item \textbf{Làm sạch văn bản}: chuyển về chữ thường; loại bỏ thẻ HTML, đường dẫn URL, dấu câu, ký tự đặc biệt và chữ số.
+    \item \textbf{Tách từ và loại từ dừng}: tách văn bản thành danh sách từ, loại bỏ các từ dừng tiếng Anh (sử dụng bộ từ dừng của thư viện NLTK).
+    \item \textbf{Rút gọn từ}: đưa từ về gốc bằng thuật toán Porter Stemmer.
+\end{enumerate}
+
+\begin{table}[H]
+\centering
+\caption{Ví dụ kết quả tiền xử lý một văn bản}
+\label{tab:vi-du-tien-xu-ly}
+\begin{tabular}{|p{3.2cm}|p{10cm}|}
+\hline
+\textbf{Bước} & \textbf{Kết quả} \\
+\hline
+Văn bản gốc & ``As U.S. budget fight looms, Republicans flip their fiscal message\ldots'' \\
+\hline
+Chữ thường, bỏ ký tự đặc biệt & ``as us budget fight looms republicans flip their fiscal message'' \\
+\hline
+Loại từ dừng & ``us budget fight looms republicans flip fiscal message'' \\
+\hline
+Stemming & ``us budget fight loom republican flip fiscal messag'' \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện trên dữ liệu ISOT}
+\end{table}
+
+\section{Vector hóa dữ liệu}
+
+Sau tiền xử lý, văn bản cần được chuyển thành dạng số. Với mô hình LSTM, nhóm sử dụng cơ chế \textbf{Tokenize -- Padding} của Keras gồm hai bước:
+
+\begin{enumerate}
+    \item \textbf{Xây dựng từ điển (Tokenizer)}: đếm tần suất của tất cả các từ trên tập huấn luyện, giữ lại \textbf{10.000 từ phổ biến nhất}; mỗi từ được ánh xạ tới một chỉ số nguyên (ID). Việc giới hạn từ điển giúp loại bỏ các từ quá hiếm (gây nhiễu) và giảm kích thước lớp Embedding. Từ mới xuất hiện trong tập kiểm tra mà không có trong từ điển được thay bằng token đặc biệt OOV (out-of-vocabulary).
+    \item \textbf{Chuyển văn bản thành chuỗi và padding}: mỗi văn bản được thay bằng chuỗi ID của các từ cấu thành. Do các bài có độ dài khác nhau, chuỗi được \textbf{padding} về độ dài cố định \textbf{256}: chuỗi ngắn được bù giá trị 0, chuỗi dài bị cắt. Độ dài 256 được chọn cân bằng giữa hai yếu tố: đủ phủ phần lớn nội dung có ý nghĩa của bài viết, nhưng không quá lớn gây chậm huấn luyện (trung bình bài viết sau tiền xử lý còn khoảng 250--300 từ).
+\end{enumerate}
+
+Chuỗi ID sau đó được đưa vào lớp Embedding để chuyển thành chuỗi vector dày đặc, sẵn sàng cho mạng LSTM.
+
+\section{Kiến trúc mô hình LSTM}
+
+\subsection{Thiết kế kiến trúc}
+
+Mô hình chính của đề tài là mạng nơ-ron học sâu với cấu trúc tuần tự gồm 5 lớp, được mô tả tại sơ đồ \ref{sodo:kien-truc}.
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[>=stealth, font=\small]
+        \node[draw, text width=6.5cm, align=center] (l1) at (0,0)
+            {Lớp Embedding\\[2pt] (10.000 từ $\times$ vector 64 chiều)};
+        \node[draw, text width=6.5cm, align=center] (l2) at (0,-1.7)
+            {Lớp LSTM\\[2pt] (64 nơ-ron)};
+        \node[draw, text width=6.5cm, align=center] (l3) at (0,-3.4)
+            {Lớp Dropout\\[2pt] ($p = 0{,}5$)};
+        \node[draw, text width=6.5cm, align=center] (l4) at (0,-5.1)
+            {Lớp Fully Connected\\[2pt] (32 nơ-ron, ReLU)};
+        \node[draw, text width=6.5cm, align=center] (l5) at (0,-6.8)
+            {Lớp đầu ra\\[2pt] (1 nơ-ron, Sigmoid)};
+        \foreach \a/\b in {l1/l2, l2/l3, l3/l4, l4/l5} {
+            \draw[->, thick] (\a) -- (\b);
+        }
+    \end{tikzpicture}
+    \SodoCaption{Kiến trúc mô hình LSTM phát hiện tin giả}{Nhóm tự xây dựng}
+    \label{sodo:kien-truc}
+\end{sodo}
+
+\textbf{Ý nghĩa từng lớp:}
 
 \begin{itemize}
-    \item Kỹ năng lập trình, kiểm thử hoặc phân tích hệ thống.
-    \item Kỹ năng sử dụng công cụ phát triển phần mềm.
-    \item Kỹ năng đọc hiểu tài liệu kỹ thuật.
-    \item Kỹ năng xử lý lỗi và tối ưu công việc.
+    \item \textbf{Lớp Embedding} chuyển mỗi chỉ số từ thành vector 64 chiều, giúp mô hình học được quan hệ ngữ nghĩa giữa các từ: các từ thường xuất hiện trong ngữ cảnh giống nhau (đặc biệt các từ dấu hiệu văn phong tin giả) sẽ có vector gần nhau. Vector này được học trực tiếp cùng toàn bộ mạng trong quá trình huấn luyện.
+    \item \textbf{Lớp LSTM} với 64 nơ-ron đọc chuỗi vector theo thứ tự và tổng hợp thông tin ngữ cảnh của toàn bộ bài viết vào trạng thái ẩn cuối cùng. Kích thước 64 là điểm cân bằng giữa khả năng biểu diễn (càng nhiều nơ-ron càng tốt) và thời gian huấn luyện trên tài nguyên sẵn có.
+    \item \textbf{Lớp Dropout} với tỷ lệ 0,5 tắt ngẫu nhiên một nửa nơ-ron khi huấn luyện nhằm hạn chế quá khớp.
+    \item \textbf{Lớp Fully Connected} với 32 nơ-ron và hàm kích hoạt ReLU học các tổ hợp phi tuyến của đặc trưng mà LSTM tổng hợp được.
+    \item \textbf{Lớp đầu ra} gồm 1 nơ-ron với hàm sigmoid, cho ra xác suất bài viết là tin giả. Xác suất $\geq 0{,}5$ được phân vào lớp tin giả, ngược lại là tin thật.
 \end{itemize}
 
-\subsection{Kỹ năng mềm}
+\subsection{Cấu hình huấn luyện}
+
+\begin{table}[H]
+\centering
+\caption{Cấu hình huấn luyện mô hình}
+\label{tab:tham-so-mo-hinh}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Thành phần} & \textbf{Giá trị lựa chọn} \\
+\hline
+Từ điển tối đa & 10.000 từ \\
+\hline
+Độ dài chuỗi (max length) & 256 \\
+\hline
+Kích thước vector Embedding & 64 \\
+\hline
+Số nơ-ron LSTM & 64 \\
+\hline
+Tỷ lệ Dropout & 0,5 \\
+\hline
+Hàm mất mát & Binary Cross-Entropy \\
+\hline
+Thuật toán tối ưu & Adam (learning rate $10^{-3}$) \\
+\hline
+Kích thước lô (batch size) & 64 \\
+\hline
+Số vòng huấn luyện (epochs) & 10 (có Early Stopping, patience $= 2$) \\
+\hline
+Tỷ lệ chia dữ liệu & 75\% huấn luyện / 25\% kiểm tra \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự xây dựng}
+\end{table}
+
+Các siêu tham số trên được lựa chọn qua các thí nghiệm trình bày ở mục Kết quả thực nghiệm (kịch bản E3--E5): từ điển 20.000 từ không cải thiện mà giảm nhẹ độ chính xác (98,89\% so với 99,20\%) do các từ hiếm chỉ thêm nhiễu; độ dài chuỗi 256 là điểm cân bằng giữa việc giữ đủ nội dung bài viết và thời gian huấn luyện; batch size 64 cho huấn luyện ổn định hơn với văn bản dài.
+
+\section{Thiết kế thí nghiệm}
+
+\subsection{Mô hình tham chiếu}
+
+Để có cơ sở so sánh, đề tài huấn luyện song song ba mô hình học máy truyền thống trên cùng bộ dữ liệu, sử dụng đặc trưng TF-IDF (n-gram $n = 1..2$):
 
 \begin{itemize}
-    \item Kỹ năng giao tiếp trong môi trường làm việc.
-    \item Kỹ năng làm việc nhóm.
-    \item Kỹ năng quản lý thời gian.
-    \item Tác phong làm việc chuyên nghiệp.
+    \item \textbf{Multinomial Naive Bayes}: mô hình xác suất dựa trên định lý Bayes, giả định các đặc trưng độc lập.
+    \item \textbf{Logistic Regression}: mô hình phân loại tuyến tính cho nhị phân, tiêu biểu cho các phương pháp dựa trên đặc trưng TF-IDF.
+    \item \textbf{Passive Aggressive}: mô hình học trực tuyến, là mô hình tham chiếu trong nghiên cứu gốc của bộ dữ liệu \cite{ahmed2017}.
 \end{itemize}
 
-\section{Đề xuất cải thiện hoặc đóng góp ý kiến cho doanh nghiệp}
+\subsection{Kịch bản thí nghiệm}
 
-Sinh viên nêu các đề xuất phù hợp nếu có, ví dụ:
+Thí nghiệm được thiết kế gồm các kịch bản:
+
+\begin{table}[H]
+\centering
+\caption{Các kịch bản thí nghiệm}
+\label{tab:kich-ban}
+\begin{tabular}{|c|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{STT} & \textbf{Kịch bản} & \textbf{Mục đích} \\
+\hline
+E1 & Huấn luyện 3 mô hình truyền thống với TF-IDF & Xây dựng baseline so sánh \\
+\hline
+E2 & Huấn luyện mô hình LSTM (cấu hình bảng \ref{tab:tham-so-mo-hinh}) & Mô hình chính của đề tài \\
+\hline
+E3 & Thay đổi từ điển: 10.000 / 20.000 từ & Ảnh hưởng kích thước từ điển \\
+\hline
+E4 & Thay đổi độ dài chuỗi: 128 / 256 / 400 & Ảnh hưởng độ dài đầu vào \\
+\hline
+E5 & Bỏ/tắt Dropout và Early Stopping & Kiểm chứng vai trò chống quá khớp \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự xây dựng}
+\end{table}
+
+Mỗi kịch bản được chạy với cùng một cách chia dữ liệu (cố định random seed) để bảo đảm so sánh công bằng. Đánh giá được thực hiện trên tập kiểm tra chiếm 25\% dữ liệu mà mô hình chưa từng thấy.
+
+\subsection{Công cụ và môi trường thực nghiệm}
+
+\begin{table}[H]
+\centering
+\caption{Công cụ và môi trường thực nghiệm}
+\label{tab:moi-truong}
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Thành phần} & \textbf{Công cụ} \\
+\hline
+Ngôn ngữ lập trình & Python 3.12 \\
+\hline
+Thư viện học máy & scikit-learn \\
+\hline
+Thư viện học sâu & TensorFlow 2.x / Keras \\
+\hline
+Thư viện xử lý ngôn ngữ & NLTK \\
+\hline
+Thư viện trực quan hóa & Matplotlib, Seaborn \\
+\hline
+Môi trường thực thi & Máy tính cá nhân (CPU, hệ điều hành Windows) \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự tổng hợp}
+\end{table}
+
+\section{Kết quả thực nghiệm}
+\label{sec:kq-thuc-nghiem}
+
+% Số liệu dưới đây là kết quả huấn luyện thực tế của nhóm (log Keras).
+\subsection{Quá trình huấn luyện mô hình LSTM}
+
+Mô hình được huấn luyện tối đa 10 vòng trên tập huấn luyện, mỗi vòng quét toàn bộ tập huấn luyện qua các lô 64 mẫu. Lỗi trên tập kiểm tra được theo dõi sau mỗi vòng để chặn huấn luyện sớm (Early Stopping) khi lỗi không giảm thêm. Bảng \ref{tab:lich-su-huan-luyen} là lịch sử huấn luyện thực tế của mô hình: Early Stopping dừng sau vòng thứ 5 và khôi phục trọng số của vòng tốt nhất là vòng thứ 3.
+
+\begin{table}[H]
+\centering
+\caption{Lịch sử huấn luyện thực tế của mô hình LSTM theo các vòng}
+\label{tab:lich-su-huan-luyen}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\textbf{Epoch} & \textbf{Loss (train)} & \textbf{Accuracy (train)} & \textbf{Loss (test)} & \textbf{Accuracy (test)} \\
+\hline
+1 & 0,1231 & 96,10\% & 0,0677 & 97,86\% \\
+\hline
+2 & 0,0362 & 99,02\% & 0,0442 & 98,86\% \\
+\hline
+\textbf{3} & 0,0226 & 99,41\% & \textbf{0,0364} & \textbf{99,20\%} \\
+\hline
+4 & 0,0216 & 99,42\% & 0,0401 & 98,89\% \\
+\hline
+5 & 0,0106 & 99,74\% & 0,0519 & 98,70\% \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện (log huấn luyện Keras)}
+\end{table}
+
+Quá trình huấn luyện cho thấy một số quan sát đáng chú ý:
 
 \begin{itemize}
-    \item Đề xuất cải thiện quy trình hướng dẫn thực tập sinh.
-    \item Đề xuất cải thiện tài liệu kỹ thuật hoặc tài liệu bàn giao.
-    \item Đề xuất cải thiện công cụ, quy trình kiểm thử hoặc quy trình triển khai.
+    \item Mô hình hội tụ \textbf{rất nhanh}: chỉ sau vòng đầu tiên, độ chính xác trên tập kiểm tra đã đạt 97,86\%, và đạt đỉnh 99,20\% ở vòng thứ 3. Điều này cho thấy các dấu hiệu phân biệt tin thật/giả trong bộ dữ liệu ISOT khá rõ ràng với mô hình học ngữ cảnh.
+    \item Từ vòng thứ 4 trở đi, lỗi trên tập huấn luyện tiếp tục giảm (0,0106 ở vòng thứ 5) trong khi lỗi trên tập kiểm tra tăng trở lại (0,0364 $\rightarrow$ 0,0519) --- dấu hiệu \textbf{quá khớp} bắt đầu xuất hiện. Cơ chế Early Stopping với patience $= 2$ dừng huấn luyện sau vòng thứ 5 và khôi phục trọng số của vòng tốt nhất (vòng thứ 3), đúng vai trò chống quá khớp như thiết kế.
 \end{itemize}
 
-\section{Tự đánh giá hiệu quả thực tập}
+Hình \ref{fig:bieu-do-loss} là biểu đồ lỗi và độ chính xác theo vòng huấn luyện.
 
-Sinh viên tự đánh giá mức độ hoàn thành công việc, những điểm mạnh, hạn chế và định hướng cải thiện sau quá trình thực tập.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/loss-curve.png}
+    \caption{Biểu đồ lỗi và độ chính xác của mô hình LSTM theo vòng huấn luyện}
+    \label{fig:bieu-do-loss}
+    \Nguon{Nhóm tự thực hiện (matplotlib trên log huấn luyện Keras)}
+\end{figure}
+
+\subsection{Kết quả trên tập kiểm tra}
+
+Bảng \ref{tab:ket-qua} tổng hợp kết quả của các mô hình trên tập kiểm tra (25\% dữ liệu).
+
+\begin{table}[H]
+\centering
+\caption{Kết quả phân loại của các mô hình trên tập kiểm tra}
+\label{tab:ket-qua}
+\begin{tabular}{|l|c|c|c|c|}
+\hline
+\textbf{Mô hình} & \textbf{Accuracy (\%)} & \textbf{Precision (\%)} & \textbf{Recall (\%)} & \textbf{F1 (\%)} \\
+\hline
+Naive Bayes + TF-IDF & 95,81 & 95,31 & 95,39 & 95,35 \\
+\hline
+Logistic Regression + TF-IDF & 98,84 & 99,29 & 98,14 & 98,71 \\
+\hline
+Passive Aggressive + TF-IDF & \textbf{99,42} & \textbf{99,54} & \textbf{99,16} & \textbf{99,35} \\
+\hline
+\textbf{LSTM (mô hình đề xuất)} & 99,20 & 99,47 & 98,75 & 99,11 \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện}
+\end{table}
+
+Kết quả cho thấy tất cả các mô hình đều vượt xa mức $\sim$93\% của Passive Aggressive trong nghiên cứu gốc \cite{ahmed2017} trên cùng bộ dữ liệu. Đáng chú ý, \textbf{Passive Aggressive đạt cao nhất (99,42\%)}, nhỉnh hơn mô hình LSTM của đề tài (99,20\%); LSTM cao hơn hẳn Naive Bayes (95,81\%) và nhỉnh nhẹ hơn Logistic Regression (98,84\%). Việc các mô hình tuyến tính TF-IDF đạt gần 99\% là một tín hiệu quan trọng: bộ dữ liệu ISOT thu tin thật và tin giả từ hai nhóm nguồn khác biệt (Reuters so với các trang đăng tin giả), nên nhiều từ --- tên chủ đề, kiểu văn phong, cách viết tiêu đề --- gắn chặt với từng lớp, khiến mô hình dựa trên tần suất từ cũng phân loại được gần như hoàn hảo. Trên dữ liệu ``khó'' hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống, lợi thế của LSTM --- khả năng học ngữ cảnh và quan hệ giữa các từ --- mới có thể bộc lộ rõ. Đây là điểm nhóm sẽ quay lại trong mục \ref{sec:nhan-xet}.
+
+Hình \ref{fig:confusion} là ma trận nhầm lẫn của mô hình LSTM trên tập kiểm tra.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{images/confusion-matrix.png}
+    \caption{Ma trận nhầm lẫn của mô hình LSTM trên tập kiểm tra}
+    \label{fig:confusion}
+    \Nguon{Nhóm tự thực hiện (matplotlib trên tập kiểm tra)}
+\end{figure}
+
+Hình \ref{fig:roc} thể hiện đường cong ROC của mô hình LSTM.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\textwidth]{images/roc-curve.png}
+    \caption{Đường cong ROC của mô hình LSTM trên tập kiểm tra}
+    \label{fig:roc}
+    \Nguon{Nhóm tự thực hiện (matplotlib trên tập kiểm tra)}
+\end{figure}
+
+Đường cong ROC đi sát sát góc trên bên trái của đồ thị, phản ánh khả năng phát hiện cao ở hầu hết mọi ngưỡng phân loại, không phụ thuộc vào việc chọn ngưỡng 0,5 mặc định.
+
+\subsection{Kết quả các kịch bản thí nghiệm}
+
+Bảng \ref{tab:ket-qua-kich-ban} tổng hợp kết quả các kịch bản thí nghiệm E3--E5 với mô hình LSTM.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả các kịch bản thí nghiệm với mô hình LSTM}
+\label{tab:ket-qua-kich-ban}
+\begin{tabular}{|c|p{6.5cm}|c|}
+\hline
+\textbf{Kịch bản} & \textbf{Cấu hình} & \textbf{Accuracy (\%)} \\
+\hline
+E2 & Cấu hình chuẩn (bảng \ref{tab:tham-so-mo-hinh}) & \textbf{99,20} \\
+\hline
+E3 & Từ điển 20.000 từ & 98,89 \\
+\hline
+E4 & Độ dài chuỗi 128 & 98,21 \\
+\hline
+E4 & Độ dài chuỗi 400 & 98,89 \\
+\hline
+E5 & Bỏ Dropout + Early Stopping (chạy đủ 10 vòng) & 98,65 \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện (kịch bản E3--E5, cùng cách chia dữ liệu)}
+\end{table}
+
+Từ bảng trên có thể rút ra:
+
+\begin{itemize}
+    \item \textbf{Kích thước từ điển (E3)}: tăng từ điển lên 20.000 từ không cải thiện mà còn giảm nhẹ độ chính xác (98,89\% so với 99,20\%). 10.000 từ phổ biến nhất đã bao phủ gần hết nội dung mang thông tin của các bài viết; các từ hiếm hơn chỉ bổ sung nhiễu cho lớp Embedding.
+    \item \textbf{Độ dài chuỗi (E4)}: cắt chuỗi xuống 128 từ làm giảm rõ độ chính xác (98,21\%) vì mất đi phần nội dung cuối bài, nơi nhiều bài tin chứa các chi tiết khẳng định hay trích dẫn; tăng lên 400 từ cũng không tốt hơn (98,89\%) do phần đầu bài đã chứa hầu hết dấu hiệu phân biệt, còn padding quá dài làm tăng nhiễu và thời gian huấn luyện. Kết quả xác nhận lựa chọn 256 là hợp lý.
+    \item \textbf{Dropout và Early Stopping (E5)}: khi bỏ cả hai và chạy đủ 10 vòng, độ chính xác trên tập huấn luyện lên tới 99,95\% (loss 0,0023) trong khi trên tập kiểm tra chỉ đạt 98,65\% --- chênh lệch hơn 1,3 điểm phần trăm là dấu hiệu \textbf{quá khớp} rõ ràng, thấp hơn cấu hình chuẩn 0,55 điểm phần trăm. Kết quả khẳng định vai trò của Dropout (hạn chế quá khớp) và Early Stopping (tự dừng đúng thời điểm, khôi phục trọng số tốt nhất).
+\end{itemize}
+
+\subsection{Phân tích lỗi phân loại}
+
+Mặc dù độ chính xác rất cao, mô hình vẫn còn một số bài phân loại sai trên tập kiểm tra (9.777 bài). Theo báo cáo phân loại chi tiết của Keras: lớp tin thật được nhận đúng gần như hoàn toàn (recall $\approx$ 1,00) trong khi lớp tin giả có recall $\approx$ 0,99 --- tức phần lớn bài phân sai là \textbf{tin giả bị nhận nhầm thành tin thật}. Nhóm tổng hợp các nhóm lỗi phổ biến quan sát được trong quá trình thử nghiệm (bảng \ref{tab:phan-tich-loi}).
+
+\begin{table}[H]
+\centering
+\caption{Tóm tắt các nhóm lỗi phân loại phổ biến}
+\label{tab:phan-tich-loi}
+\begin{tabular}{|p{4.5cm}|p{5cm}|p{3.5cm}|}
+\hline
+\textbf{Nhóm lỗi} & \textbf{Đặc điểm} & \textbf{Nguyên nhân có thể} \\
+\hline
+Tin thật văn phong giật gân & Tin thật viết theo lối tiêu đề câu chú ý, cảm thán & Đặc trưng văn phong bị mô hình coi là dấu hiệu tin giả \\
+\hline
+Tin giả mô phỏng văn phong báo chí & Cấu trúc bài chuẩn 5W, trích nguồn giả & Nội dung thiếu dấu hiệu tu từ điển hình của tin giả \\
+\hline
+Bài ngắn, ít ngữ cảnh & Tiêu đề ngắn, nội dung 1--2 câu & Thiếu đủ ngữ cảnh để LSTM tổng hợp \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự phân tích trên tập kiểm tra}
+\end{table}
+
+Nhận xét trên cho thấy mô hình chủ yếu học \textbf{văn phong} (mức độ giật gân, từ ngữ cường điệu) hơn là kiểm chứng sự thật của nội dung. Đây là giới hạn cố hữu của phương pháp phân loại văn bản thuần túy, đồng thời cũng gợi ý hướng cải tiến kết hợp thông tin nguồn tin hoặc kiểm chứng chéo đa bài viết.
+
+\section{Nhận xét và thảo luận}
+\label{sec:nhan-xet}
+
+\textbf{Ưu điểm của mô hình LSTM trong đề tài:}
+
+\begin{itemize}
+    \item LSTM học biểu diễn văn bản trực tiếp từ dữ liệu qua lớp Embedding, nắm được ngữ nghĩa và ngữ cảnh của từ trong câu; toàn bộ pipeline từ từ điển, embedding tới phân loại được học cùng nhau, không cần giai đoạn thiết kế đặc trưng thủ công và dễ mở rộng sang dữ liệu mới.
+    \item LSTM đặc biệt phù hợp với tin tức --- dạng văn bản dài (trung bình 396--438 từ/bài trong ISOT), khi các dấu hiệu văn phong tin giả xuất hiện rải rác khắp bài viết và cần được tổng hợp qua ngữ cảnh toàn bài.
+    \item Trên bộ dữ liệu thí nghiệm, LSTM đạt 99,20\% --- cao hơn hẳn Naive Bayes (95,81\%), cao hơn Logistic Regression (98,84\%) và chỉ thấp hơn Passive Aggressive 0,22 điểm phần trăm, trong khi không phụ thuộc vào cách trích xuất đặc trưng TF-IDF được thiết kế sẵn.
+\end{itemize}
+
+\textbf{Nhược điểm và chi phí:}
+
+\begin{itemize}
+    \item LSTM cần thời gian huấn luyện lâu hơn đáng kể (mỗi vòng khoảng 1 phút, tổng cộng 5 vòng trên CPU cá nhân, so với vài giây của các mô hình TF-IDF); suy luận cũng chậm hơn do phải xử lý chuỗi tuần tự, chưa tối ưu cho triển khai thời gian thực.
+    \item Kết quả khó diễn giải hơn: không thể chỉ ra ``từ nào góp phần quyết định'' một cách trực tiếp như trọng số của Logistic Regression, cần công cụ phân tích chú ý (attention visualization) nếu muốn giải thích.
+    \item Độ chính xác trên tập kiểm tra không đồng nghĩa với khả năng nhận diện tin giả nói chung: như phân tích ở mục \ref{sec:kq-thuc-nghiem}, một phần độ chính xác rất cao của cả bốn mô hình có thể đến từ ``rò rỉ nguồn tin'' --- bộ dữ liệu ISOT thu tin thật và tin giả từ hai nhóm nguồn khác biệt. Trên tin giả mới có văn phong tinh vi hơn, độ chính xác thực tế có thể thấp hơn số đo trên tập kiểm tra.
+\end{itemize}
+
+\textbf{Vì sao Passive Aggressive nhỉnh hơn LSTM trên bộ dữ liệu này?} Với đặc trưng TF-IDF, các từ mang dấu hiệu nguồn (tên chủ đề, văn phong tin tức chính thống Reuters, kiểu tiêu đề giật gân\ldots) có trọng số rất cao và mô hình tuyến tính phân tách gần như hoàn hảo hai lớp; LSTM học từ chuỗi embedding nên không tận dụng trực tiếp tần suất từ toàn văn bản theo cách đó. Kết quả này một mặt xác nhận bộ dữ liệu ISOT ``dễ'' với mô hình dựa trên tần suất từ, mặt khác gợi ý rằng sự khác biệt giữa các kiến trúc chỉ bộc lộ rõ trên bộ dữ liệu cân bằng nguồn tin hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống. Việc LSTM vẫn hơn Logistic Regression 0,36 điểm phần trăm và hơn Naive Bayes hơn 3 điểm phần trăm cho thấy khả năng học ngữ cảnh của mô hình có vai trò thực sự.
+
+\textbf{So sánh với các nghiên cứu khác trên cùng bộ dữ liệu:} nghiên cứu gốc \cite{ahmed2017} đạt khoảng 93\% với Passive Aggressive; các nghiên cứu công bố trên ISOT với LSTM/CNN thường đạt 98--99\% và trên 99\% với BERT \cite{bert}. Kết quả của nhóm (LSTM 99,20\%; Passive Aggressive 99,42\%) nằm trong vùng này và cao hơn nghiên cứu gốc; nguyên nhân chủ yếu là do khác biệt tiền xử lý (loại từ dừng, Porter Stemmer, loại bỏ bài trùng lặp) và cách chia tập huấn luyện/kiểm tra.
+
+\section{Ứng dụng thử nghiệm}
+
+Để minh họa khả năng ứng dụng thực tế, nhóm xây dựng một giao diện demo nhỏ bằng thư viện \textbf{Streamlit} (Python): người dùng dán nội dung một bài tin tức bất kỳ vào khung văn bản, hệ thống gọi mô hình LSTM đã huấn luyện và hiển thị dự đoán kèm xác suất (Hình \ref{fig:demo-streamlit-1} và Hình \ref{fig:demo-streamlit-2}).
+
+{\small
+\begin{verbatim}
+# app.py --- Demo phat hien tin gia bang Streamlit
+import streamlit as st
+import tensorflow as tf
+
+model = tf.keras.models.load_model("lstm_fake_news.keras")
+st.title("Kiem tra tin that hay tin gia")
+text = st.text_area("Dan noi dung bai viet vao day:")
+
+if st.button("Kiem tra"):
+    seq = tokenizer.texts_to_sequences([text])
+    x = pad_sequences(seq, maxlen=256)
+    p = float(model.predict(x)[0][0])
+    if p >= 0.5:
+        st.error(f"CANH BAO: kha nang tin GIA la {p:.1%}")
+    else:
+        st.success(f"Ket qua: kha nang tin THAT la {1-p:.1%}")
+\end{verbatim}
+}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/demo-streamlit-1.png}
+    \caption{Giao diện demo kiểm tra một bài tin thật: mô hình dự đoán đúng là tin thật với độ tin cậy 100\%}
+    \label{fig:demo-streamlit-1}
+    \Nguon{Nhóm tự thực hiện}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{images/demo-streamlit-2.png}
+    \caption{Giao diện demo kiểm tra một bài tin giả: mô hình cảnh báo đúng là tin giả với độ tin cậy 100\%}
+    \label{fig:demo-streamlit-2}
+    \Nguon{Nhóm tự thực hiện}
+\end{figure}
+
+Trong cả hai trường hợp thử nghiệm (một bài tin thật và một bài tin giả lấy từ bộ dữ liệu ISOT), mô hình dự đoán đúng với độ tin cậy 100\%. Ứng dụng demo tuy đơn giản nhưng cho thấy mô hình có thể được tích hợp vào các hệ thống thực tế: tiện ích trình duyệt hỗ trợ người đọc, hệ thống lọc nội dung cho mạng xã hội, hoặc công cụ hỗ trợ biên tập viên báo chí kiểm tra nguồn tin trước khi trích dẫn.

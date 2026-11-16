@@ -1,59 +1,305 @@
-\chapter{NỘI DUNG THỰC TẬP}
+\chapter[CƠ SỞ LÝ THUYẾT]{Cơ sở lý thuyết}
 
-\textit{Lưu ý: Sinh viên cần cập nhật báo cáo theo từng tuần dựa trên công việc thực tế đã thực hiện.}
+Chương này trình bày các khái niệm và phương pháp nền tảng phục vụ xây dựng mô hình ở chương sau, theo trình tự: từ khái quát học máy, xử lý ngôn ngữ tự nhiên, các kỹ thuật trích xuất đặc trưng văn bản, các mô hình học máy truyền thống, tới các mạng nơ-ron học sâu (RNN, LSTM, CNN) và các độ đo đánh giá mô hình.
 
-\section{Mô tả công việc thực tập}
+\section{Học máy và học sâu}
 
-Sinh viên mô tả tổng quan công việc được giao trong thời gian thực tập, bao gồm mục tiêu công việc, phạm vi công việc, công cụ sử dụng và sản phẩm/kết quả cần đạt được.
+\subsection{Khái niệm học máy}
 
-\section{Công việc thực tập}
+\textbf{Học máy} (Machine Learning --- ML) là nhánh của trí tuệ nhân tạo nghiên cứu các thuật toán cho phép máy tính \textit{học} từ dữ liệu thay vì được lập trình trực tiếp bằng quy tắc cứng. Như Arthur Samuel mô tả, học máy là lĩnh vực cho phép máy tính có khả năng học mà không cần được lập trình rõ ràng. Theo tiếp cận học máy của Tom Mitchell, một chương trình học từ \textbf{tập kinh nghiệm} $E$ đối với \textbf{tác vụ} $T$ và \textbf{độ đo} $P$; nếu hiệu năng thực hiện $T$ đo bằng $P$ được cải thiện theo $E$ thì chương trình đó được coi là ``học'' \cite{tiep}.
 
-Sinh viên trình bày chi tiết các nhóm công việc đã thực hiện. Ví dụ:
+Các bài toán học máy được chia thành ba nhóm chính:
 
 \begin{itemize}
-    \item Tìm hiểu quy trình phát triển phần mềm tại doanh nghiệp.
-    \item Cài đặt môi trường phát triển.
-    \item Tìm hiểu tài liệu yêu cầu, tài liệu thiết kế hoặc mã nguồn.
-    \item Tham gia xây dựng, kiểm thử hoặc bảo trì một chức năng cụ thể.
-    \item Viết tài liệu hướng dẫn sử dụng hoặc tài liệu kỹ thuật.
+    \item \textbf{Học có giám sát} (supervised learning): học từ dữ liệu có gán nhãn, ví dụ phân loại (classification) và hồi quy (regression). Bài toán phát hiện tin giả là bài toán học có giám sát dạng phân loại nhị phân.
+    \item \textbf{Học không giám sát} (unsupervised learning): học từ dữ liệu không có nhãn, ví dụ phân cụm (clustering), giảm chiều (dimensionality reduction).
+    \item \textbf{Học tăng cường} (reinforcement learning): tác nhân học hành vi qua tương tác với môi trường bằng phần thưởng/trị phạt.
 \end{itemize}
 
-\section{Chi tiết nhật ký thực tập}
+\subsection{Học sâu}
 
-Sinh viên có thể trình bày nhật ký thực tập theo bảng dưới đây.
+\textbf{Học sâu} (Deep Learning --- DL) là nhánh của học máy sử dụng \textbf{mạng nơ-ron nhiều lớp} để tự học các biểu diễn dữ liệu ở nhiều mức trừu tượng khác nhau. Ưu điểm nổi bật của học sâu là khả năng \textbf{tự học đặc trưng} (representation learning): thay vì con người phải thiết kế đặc trưng thủ công, mạng nơ-ron học trực tiếp từ dữ liệu thô (ảnh, âm thanh, văn bản). Với dữ liệu văn bản, học sâu đặc biệt hiệu quả khi dữ liệu lớn và các quy luật cần học mang tính ngữ cảnh, khó biểu diễn bằng bộ đặc trưng thủ công.
 
-\begin{longtable}{|c|p{3cm}|p{6cm}|p{4cm}|}
-\caption{Nhật ký thực tập}
-\label{tab:nhat-ky-thuc-tap} \\
-\hline
-\textbf{Tuần} & \textbf{Thời gian} & \textbf{Nội dung công việc} & \textbf{Kết quả đạt được} \\
-\hline
-\endfirsthead
+\subsection{Quy trình xây dựng một bài toán học máy}
 
-\hline
-\textbf{Tuần} & \textbf{Thời gian} & \textbf{Nội dung công việc} & \textbf{Kết quả đạt được} \\
-\hline
-\endhead
+Quy trình chuẩn cho một bài toán học máy có giám sát được thực hiện trong đề tài gồm các bước:
 
-1 & Từ ngày ... đến ngày ...
-& Tìm hiểu doanh nghiệp, phòng ban thực tập, quy trình làm việc.
-& Nắm được cơ cấu tổ chức, nội quy và công việc được giao. \\
-\hline
+\begin{enumerate}
+    \item \textbf{Xác định bài toán}: xác định rõ đầu vào (văn bản tin tức), đầu ra (nhãn thật/giả) và tiêu chí đánh giá thành công (Accuracy, F1-score\ldots).
+    \item \textbf{Thu thập dữ liệu}: tìm bộ dữ liệu gán nhãn chất lượng, đủ lớn và có nguồn gốc rõ ràng (bộ ISOT \cite{dataset}).
+    \item \textbf{Khảo sát dữ liệu (EDA)}: thống kê số lượng mẫu, phân bố nhãn, độ dài văn bản, kiểm tra giá trị thiếu, trùng lặp.
+    \item \textbf{Tiền xử lý}: làm sạch văn bản, chuẩn hóa, loại bỏ nhiễu.
+    \item \textbf{Trích xuất đặc trưng / vector hóa}: chuyển văn bản thành dạng số mà thuật toán học được (TF-IDF hoặc chuỗi chỉ số từ + Embedding).
+    \item \textbf{Chia tập dữ liệu}: chia ngẫu nhiên thành tập huấn luyện (train) để học tham số và tập kiểm tra (test) để đánh giá khách quan. Trong đề tài dùng tỷ lệ 75\%/25\%. Với các bài toán lớn, thường chia thêm tập phát triển (validation) để tinh chỉnh siêu tham số hoặc dùng \textbf{kiểm chứng chéo k-lớp} (k-fold cross-validation): chia dữ liệu thành $k$ phần, luân phiên lấy mỗi phần làm tập kiểm tra và lấy trung bình kết quả.
+    \item \textbf{Huấn luyện}: chạy thuật toán tối ưu để tìm tham số tốt nhất trên tập huấn luyện.
+    \item \textbf{Đánh giá và phân tích lỗi}: đo các độ đo đánh giá trên tập kiểm tra chưa từng thấy, phân tích các mẫu bị phân loại sai.
+    \item \textbf{Triển khai}: đóng gói mô hình vào ứng dụng thực tế.
+\end{enumerate}
 
-2 & Từ ngày ... đến ngày ...
-& Cài đặt môi trường làm việc, tìm hiểu công nghệ sử dụng trong dự án.
-& Cài đặt thành công môi trường, chạy thử dự án mẫu. \\
-\hline
+\section{Xử lý ngôn ngữ tự nhiên}
 
-3 & Từ ngày ... đến ngày ...
-& Tham gia thực hiện một số nhiệm vụ được giao trong dự án.
-& Hoàn thành các công việc theo yêu cầu của người hướng dẫn. \\
-\hline
+\textbf{Xử lý ngôn ngữ tự nhiên} (Natural Language Processing --- NLP) là lĩnh vực giao thoa giữa ngôn ngữ học, trí tuệ nhân tạo và khoa học máy tính, nghiên cứu cách máy tính có thể hiểu, phân tích và tạo ra ngôn ngữ tự nhiên của con người. Phân loại văn bản (text classification) là một trong những bài toán cơ bản nhất của NLP, bao gồm phân loại cảm xúc, lọc thư rác, phân loại chủ đề tin tức và cả phát hiện tin giả.
 
-4 & Từ ngày ... đến ngày ...
-& Kiểm thử, chỉnh sửa lỗi, hoàn thiện tài liệu hoặc báo cáo kết quả.
-& Hoàn thiện sản phẩm/công việc được giao. \\
-\hline
+Khác với dữ liệu bảng truyền thống, văn bản có đặc điểm: độ dài thay đổi, thứ tự từ mang ý nghĩa, từ vựng khổng lồ, và cùng một nội dung có thể diễn đạt vô số cách. Do đó trước khi đưa vào mô hình, văn bản cần được chuẩn hóa qua các bước xử lý cơ bản:
 
-\end{longtable}
-\Nguon{Sinh viên tổng hợp}
+\begin{itemize}
+    \item \textbf{Chuẩn hóa chữ}: chuyển toàn bộ văn bản về chữ thường (lowercase) để coi ``News'' và ``news'' là cùng một từ; loại bỏ dấu câu, ký tự đặc biệt, đường dẫn, số và thẻ HTML --- các thành phần ít mang thông tin phân loại.
+    \item \textbf{Tách từ} (tokenization): phân tách văn bản thành các đơn vị nhỏ hơn (từ hoặc ký tự), là đơn vị cơ bản để xây dựng từ điển và vector hóa.
+    \item \textbf{Loại bỏ từ dừng} (stopwords removal): các từ xuất hiện rất thường xuyên nhưng ít mang thông tin phân loại như ``a'', ``the'', ``is'', ``and''\ldots được loại bỏ theo bộ từ dừng chuẩn của từng ngôn ngữ (NLTK).
+    \item \textbf{Rút gọn từ} (stemming/lemmatization): đưa các biến thể của từ về dạng gốc. \textit{Stemming} dùng thuật toán cắt đuôi nhanh (Porter Stemmer) có thể cho kết quả không phải từ đúng chính tả (``studies'' $\rightarrow$ ``studi''); \textit{lemmatization} tra cứu từ điển cho ra từ nguyên chuẩn (``studies'' $\rightarrow$ ``study'') nhưng chậm hơn. Với bài toán phân loại ở quy mô lớn, stemming thường đủ hiệu quả.
+\end{itemize}
+
+\textbf{Mô hình n-gram} là khái niệm quan trọng liên quan: một n-gram là dãy $n$ từ liên tiếp. Unigram là từ đơn, bigram là cặp từ, trigram là cụm 3 từ. Việc tính đặc trưng theo n-gram cho phép giữ lại một phần ngữ nghĩa bị mất bởi mô hình túi từ, ví dụ bigram ``not good'' mang ý nghĩa trái ngược với hai unigram ``not'' và ``good'' riêng lẻ.
+
+\section{Trích xuất đặc trưng văn bản}
+
+\subsection{Mô hình túi từ}
+
+\textbf{Mô hình túi từ} (Bag of Words) biểu diễn văn bản bằng vector tần suất xuất hiện của các từ trong từ điển, \textit{bỏ qua hoàn toàn thứ tự} của chúng. Ví dụ với từ điển 4 từ \{``tin'', ``giả'', ``lan'', ``truyền''\}, câu ``tin giả lan truyền'' được biểu diễn [1, 1, 1, 1]. Mô hình đơn giản, dễ triển khai nhưng: từ điển khổng lồ gây vector thưa (sparse) kích thước lớn; mất hoàn toàn thông tin thứ tự; các từ hiếm gây nhiễu.
+
+\subsection{TF-IDF}
+
+\textbf{TF-IDF} (Term Frequency -- Inverse Document Frequency) là kỹ thuật đánh trọng số của từ trong văn bản, được tính theo công thức:
+
+\begin{equation}
+    \mathrm{TFIDF}(t, d) = \mathrm{TF}(t, d) \times \mathrm{IDF}(t)
+    \label{eq:tfidf}
+\end{equation}
+
+với $\mathrm{TF}(t, d)$ là tần suất của từ $t$ trong văn bản $d$ (có thể chuẩn hóa theo độ dài văn bản) và
+
+\begin{equation}
+    \mathrm{IDF}(t) = \log \frac{N}{1 + n_t}
+    \label{eq:idf}
+\end{equation}
+
+trong đó $N$ là tổng số văn bản trong kho dữ liệu và $n_t$ là số văn bản chứa từ $t$. Ý nghĩa của công thức: từ xuất hiện ở nhiều văn bản (ít mang tính phân biệt, ví dụ từ dừng) có IDF nhỏ; từ xuất hiện tập trung ở một số văn bản (đặc trưng cho chủ đề) có IDF lớn. Nhân với TF, những từ \textit{vừa đặc trưng cho văn bản vừa hiếm trong kho} nhận trọng số cao nhất.
+
+\textbf{Ví dụ minh họa.} Giả sử kho dữ liệu có $N = 1.000$ bài tin tức; từ ``bầu'' xuất hiện 900 bài (IDF $\approx \log(1000/901) \approx 0{,}05$ --- gần như vô nghĩa) trong khi từ ``đàn áp'' chỉ xuất hiện 50 bài (IDF $\approx \log(1000/51) \approx 1{,}3$ --- mang tính phân biệt cao). Với cùng tần suất xuất hiện trong một bài, trọng số TF-IDF của ``đàn áp'' sẽ gấp khoảng 25 lần ``bầu''.
+
+TF-IDF kết hợp với phân tích n-gram và mô hình học máy truyền thống (Naive Bayes, Logistic Regression, Passive Aggressive) là phương pháp kinh điển cho phân loại văn bản và vẫn là baseline mạnh tới ngày nay.
+
+\subsection{Vector biểu diễn từ (Word Embedding)}
+
+Mô hình túi từ và TF-IDF coi các từ độc lập với nhau, không thể hiện quan hệ ngữ nghĩa: ``vua'' và ``vương quốc'' là hai chiều hoàn toàn tách rời. \textbf{Word embedding} khắc phục hạn chế này bằng cách biểu diễn mỗi từ dưới dạng một \textbf{vector dày đặc} (dense vector) trong không gian nhiều chiều (thường 50--300 chiều), trong đó các từ có nghĩa gần nhau có vector gần nhau.
+
+Ý tưởng nền tảng được phát biểu bởi quan sát nổi tiếng của Firth: ``\textit{Bạn sẽ biết một từ qua những từ đi cùng nó}'' (You shall know a word by the company it keeps). Phương pháp tiêu biểu là \textbf{Word2Vec} của Mikolov và cộng sự \cite{word2vec}, huấn luyện một mạng nơ-ron nhỏ trên kho văn bản lớn theo hai kiến trúc:
+
+\begin{itemize}
+    \item \textbf{CBOW} (Continuous Bag of Words): dự đoán từ đích từ ngữ cảnh xung quanh --- với câu ``vua \_\_\_ trị vì đất nước'', mô hình học dự đoán từ thiếu là ``đại''.
+    \item \textbf{Skip-gram}: ngược lại, dự đoán ngữ cảnh từ từ đích, hiệu quả với từ hiếm.
+\end{itemize}
+
+Sau huấn luyện, ma trận trọng số của lớp ẩn chính là các vector từ, trong đó các từ thường đi cùng nhau trong các ngữ cảnh giống nhau sẽ có vector gần nhau. Kết quả học được vượt xa mong đợi của một mô hình đơn giản: các quan hệ ngữ nghĩa, từ loại, thậm chí các phép tính vector (ví dụ $v_{\text{king}} - v_{\text{man}} + v_{\text{woman}} \approx v_{\text{queen}}$) được phản ánh trong không gian vector.
+
+Trong các mạng nơ-ron học sâu xử lý văn bản, lớp \textbf{Embedding} thực hiện vai trò tương tự: cho mỗi chỉ số từ, trả về vector dày đặc tương ứng. Vector này có thể được học trực tiếp cùng với toàn bộ mạng (cách làm của đề tài) hoặc khởi tạo sẵn từ Word2Vec/GloVe đã huấn luyện trước trên kho văn bản lớn.
+
+\section{Một số mô hình học máy truyền thống}
+
+Các mô hình học máy truyền thống kết hợp đặc trưng TF-IDF là cơ sở so sánh quan trọng trong đề tài. Dưới đây là nguyên lý hoạt động của ba mô hình tiêu biểu.
+
+\subsection{Naive Bayes}
+
+\textbf{Naive Bayes} là mô hình phân loại dựa trên định lý Bayes với giả định ``ngây thơ'' (naive): các đặc trưng độc lập với nhau khi biết lớp của mẫu. Với bài toán phân loại tin thật/giả, mẫu $x$ được gán vào lớp có xác suất sau lớn nhất:
+
+\begin{equation}
+    \hat{y} = \arg\max_{c \in \{0, 1\}} P(c) \prod_{i=1}^{n} P(x_i \mid c)
+    \label{eq:nb}
+\end{equation}
+
+trong đó $P(c)$ là xác suất tiền nghiệm của lớp $c$ (ước lượng từ tỷ lệ các bài thật/giả trong tập huấn luyện) và $P(x_i \mid c)$ là xác suất từ $x_i$ xuất hiện trong lớp $c$. Với đặc trưng TF-IDF là giá trị liên tục, thường dùng biến thể \textbf{Multinomial Naive Bayes} coi mỗi giá trị đặc trưng như số lần xuất hiện của từ. Ưu điểm: huấn luyện cực nhanh, ít tham số, hiệu quả với dữ liệu thưa; nhược điểm: giả định độc lập giữa các từ rõ ràng sai (ngôn ngữ có cấu trúc), nên chất lượng bị giới hạn.
+
+\subsection{Logistic Regression}
+
+\textbf{Hồi quy Logistic} mô hình hóa xác suất mẫu thuộc lớp dương qua hàm sigmoid áp lên một tổ hợp tuyến tính của đặc trưng:
+
+\begin{equation}
+    P(y = 1 \mid x) = \sigma(w^{\top} x + b) = \frac{1}{1 + e^{-(w^{\top}x + b)}}
+    \label{eq:lr}
+\end{equation}
+
+với $w$ là vector trọng số của các đặc trưng TF-IDF và $b$ là thiên vị. Trọng số được học bằng tối ưu hóa \textit{maximum likelihood} thường kết hợp chuẩn hóa $L_2$ để chống quá khớp. Ý nghĩa của trọng số $w_i$ trực quan: từ có trọng số dương lớn (``shocking'', ``miracle'') đẩy dự đoán về phía tin giả, từ có trọng số âm lớn (``Reuters'' --- dấu hiệu nguồn chính thống) đẩy về phía tin thật. Mô hình đơn giản, dễ diễn giải, và trên dữ liệu văn bản với đặc trưng TF-IDF thường đạt chất lượng rất cao --- tiêu biểu cho nhóm phương pháp tuyến tính.
+
+\subsection{Passive Aggressive}
+
+\textbf{Passive Aggressive} là mô hình học trực tuyến (online learning) cho phân loại: với mỗi mẫu mới, mô hình chỉ ``chủ động'' (aggressive) cập nhật trọng số khi phân loại sai hoặc dự đoán với biên độ không đủ lớn, ngược lại giữ nguyên (passive). Cập nhật có dạng:
+
+\begin{equation}
+    w_{t+1} = w_t + \lambda_t \, y_t \, x_t
+    \label{eq:pa}
+\end{equation}
+
+trong đó $\lambda_t$ được chọn là mức cập nhật tối thiểu đủ để sửa mẫu hiện tại. Thuật toán phù hợp với luồng tin tức liên tục thay đổi, và là mô hình tham chiếu được sử dụng trong nghiên cứu gốc của bộ dữ liệu ISOT \cite{ahmed2017}.
+
+\section{Mạng nơ-ron hồi tiếp (RNN)}
+
+\textbf{Mạng nơ-ron hồi tiếp} (Recurrent Neural Network --- RNN) là mạng nơ-ron chuyên xử lý dữ liệu tuần tự như văn bản, âm thanh, chuỗi thời gian. Khác với mạng truyền thẳng (feed-forward) coi mỗi mẫu là một vector cố định, RNN có \textbf{trạng thái ẩn} $h_t$ được cập nhật theo thời bước, cho phép ghi nhận thông tin từ các phần tử trước đó trong chuỗi:
+
+\begin{equation}
+    h_t = \tanh(W_{hh}\, h_{t-1} + W_{xh}\, x_t + b_h)
+    \label{eq:rnn}
+\end{equation}
+
+với $x_t$ là đầu vào (vector của từ thứ $t$) tại thời bước $t$, $W_{hh}$, $W_{xh}$ là các ma trận trọng số dùng chung cho mọi thời bước và $b_h$ là vector thiên vị. Cùng một bộ trọng số được áp dụng lặp lại trên toàn chuỗi --- tính chất ``hồi tiếp'' của mạng.
+
+Tuy nhiên, khi huấn luyện bằng lan truyền ngược qua thời gian (BPTT), RNN cơ bản gặp vấn đề \textbf{tiêu biến gradient} (vanishing gradient): gradient lan truyền ngược qua nhiều thời bước bị nhân liên tục với đạo hàm của tanh (có giá trị tuyệt đối nhỏ hơn 1), khiến gradient dần dần triệt tiêu về 0 với các phụ thuộc xa. Kết quả: mạng chỉ học được các phụ thuộc ngắn gần, không nắm được các cụm thông tin quan trọng xuất hiện ở xa nhau trong bài viết --- trong khi với tin tức dài, dấu hiệu nhận biết tin giả ở mở đầu có thể cần được đối chiếu với nội dung ở đoạn cuối. Vấn đề nổ gradient (exploding gradient) đối xứng cũng có thể xảy ra và được xử lý bằng cắt gradient (gradient clipping).
+
+\section{Mạng nơ-ron LSTM}
+
+\subsection{Cấu trúc ô LSTM}
+
+\textbf{LSTM} (Long Short-Term Memory) do Hochreiter và Schmidhuber đề xuất \cite{lstm} giải quyết vấn đề tiêu biến gradient bằng cách bổ sung \textbf{trạng thái tế bào} (cell state) $C_t$ --- một ``băng ghi'' chạy xuyên suốt chuỗi với các phép cộng tuyến tính giúp gradient bảo toàn tốt --- cùng với ba cổng (gate) điều khiển dòng thông tin:
+
+\begin{itemize}
+    \item \textbf{Cổng quên (forget gate)} quyết định lượng thông tin cũ bị loại khỏi trạng thái tế bào:
+    \begin{equation}
+        f_t = \sigma(W_f\, [h_{t-1}, x_t] + b_f)
+    \end{equation}
+    \item \textbf{Cổng vào (input gate)} quyết định thông tin mới nào được ghi vào trạng thái tế bào:
+    \begin{equation}
+        i_t = \sigma(W_i\, [h_{t-1}, x_t] + b_i), \qquad
+        \tilde{C}_t = \tanh(W_C\, [h_{t-1}, x_t] + b_C)
+    \end{equation}
+    \item \textbf{Cổng ra (output gate)} quyết định phần trạng thái tế bào được xuất ra trạng thái ẩn:
+    \begin{equation}
+        o_t = \sigma(W_o\, [h_{t-1}, x_t] + b_o), \qquad
+        h_t = o_t \odot \tanh(C_t)
+    \end{equation}
+\end{itemize}
+
+Trạng thái tế bào được cập nhật như sau:
+
+\begin{equation}
+    C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t
+    \label{eq:lstm-cell}
+\end{equation}
+
+trong đó $\sigma$ là hàm sigmoid (giá trị trong $[0,1]$, đóng vai trò ``van mở/đóng''), $\odot$ là tích từng phần tử (Hadamard). Cơ chế cổng cho phép ô LSTM \textit{chủ động giữ} thông tin quan trọng qua hàng trăm thời bước (khi cổng quên mở gần 1) hoặc \textit{quên sạch} thông tin không cần thiết (khi cổng quên đóng về 0) --- điều mà RNN cơ bản không kiểm soát được.
+
+\subsection{Sơ đồ hoạt động của ô LSTM}
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[>=stealth, font=\small]
+        \node[draw, text width=8cm, align=center] (input) at (0,0)
+            {Đầu vào: $x_t$, $h_{t-1}$, $C_{t-1}$};
+        \node[draw, text width=10cm, align=center] (cell) at (0,-1.6)
+            {Ô LSTM\\[2pt]
+             Cổng quên: $f_t = \sigma(W_f [h_{t-1}, x_t] + b_f)$ \quad
+             Cổng vào: $i_t$, $\tilde{C}_t$\\[2pt]
+             Cổng ra: $o_t$ \quad
+             Cập nhật: $C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t$};
+        \node[draw, text width=8cm, align=center] (output) at (0,-3.5)
+            {Đầu ra: $h_t = o_t \odot \tanh(C_t)$, \; $C_t$};
+        \draw[->, thick] (input) -- (cell);
+        \draw[->, thick] (cell) -- (output);
+        % Vong lap trang thai
+        \draw[->, thick, dashed] (output.east) -- ++(1.2,0)
+            node[midway, right=0pt] {} |- (input.east)
+            node[pos=0.25, right] {\footnotesize $h_t, C_t$};
+    \end{tikzpicture}
+    \SodoCaption{Quy trình cập nhật thông tin trong ô LSTM theo thời bước}{Nhóm tự xây dựng theo \cite{lstm}}
+    \label{sodo:ong-lstm}
+\end{sodo}
+
+Cấu trúc này cho phép thông tin chảy qua chuỗi dài với gradient được bảo toàn tốt, nhờ đó LSTM học được các đặc trưng dài hạn của văn bản --- rất phù hợp cho bài toán phân loại tin giả, khi các dấu hiệu nhận biết (văn phong giật gân, từ ngữ cường điệu, lỗi logic) có thể rải rác khắp bài viết.
+
+\subsection{Bi-LSTM}
+
+\textbf{Bi-LSTM} (Bidirectional LSTM) là biến thể chạy \textbf{hai LSTM song song}: một đọc chuỗi xuôi (trái sang phải), một đọc ngược (phải sang trái); trạng thái hai chiều được ghép lại để đưa vào các lớp sau. Ưu điểm: mỗi từ được ``nhìn'' cả ngữ cảnh trước lẫn sau, phù hợp các tác vụ mà ngữ cảnh sau của từ cũng quan trọng. Với bài toán phân loại cả bài tin, Bi-LSTM có thể cải thiện nhẹ chất lượng, đổi lại gấp đôi thời gian huấn luyện. Đề tài sử dụng LSTM một chiều làm mô hình cơ sở và Bi-LSTM là hướng mở rộng.
+
+\section{Mạng nơ-ron tích chập (CNN) cho văn bản}
+
+\textbf{CNN} (Convolutional Neural Network) vốn phổ biến trong thị giác máy tính, được Kim \cite{kim2014} áp dụng thành công cho phân loại câu. Cấu trúc điển hình gồm:
+
+\begin{itemize}
+    \item Lớp Embedding chuyển chuỗi từ thành ma trận đặc trưng kích thước $L \times d$ (độ dài chuỗi $\times$ số chiều embedding).
+    \item Các \textbf{lớp tích chập 1 chiều} với bộ lọc cỡ 3, 4, 5 từ trượt trên chuỗi để bắt các cụm từ (n-gram) quan trọng, ví dụ ``shocking!'' hay ``you won't believe\ldots'' --- các dấu hiệu văn phong tin giật gân.
+    \item Lớp \textbf{max-pooling} lấy giá trị lớn nhất của mỗi bản đồ đặc trưng, giữ lại tín hiệu mạnh nhất của mỗi loại cụm từ bất kể nó xuất hiện ở đâu trong bài.
+    \item Lớp fully-connected và sigmoid ra dự đoán.
+\end{itemize}
+
+CNN trích xuất đặc trưng cục bộ rất tốt và huấn luyện song song nhanh, nhưng chỉ nhìn trong ``khung cửa sổ'' bộ lọc; LSTM mô hình hóa ngữ cảnh tuần toàn chuỗi. Hai loại mạng thường được kết hợp (CNN-LSTM) để tận dụng ưu điểm của cả hai: CNN trích cụm từ đặc trưng cục bộ, LSTM tổng hợp chuỗi.
+
+\section{Các kỹ thuật huấn luyện}
+
+\subsection{Hàm kích hoạt}
+
+Mạng LSTM sử dụng \textbf{hàm tanh} và \textbf{sigmoid} bên trong các cổng. Tại lớp đầu ra của bài toán phân loại nhị phân, \textbf{hàm sigmoid} cho xác suất thuộc lớp dương:
+
+\begin{equation}
+    \sigma(z) = \frac{1}{1 + e^{-z}}
+    \label{eq:sigmoid}
+\end{equation}
+
+Tại các lớp ẩn giữa (fully-connected), đề tài dùng \textbf{ReLU} (Rectified Linear Unit):
+
+\begin{equation}
+    \mathrm{ReLU}(z) = \max(0, z)
+    \label{eq:relu}
+\end{equation}
+
+ReLU là hàm kích hoạt tiêu chuẩn của mạng hiện đại vì tính toán nhanh, không bão hòa với giá trị dương, giúp giảm hiệu ứng tiêu biến gradient so với sigmoid/tanh.
+
+\subsection{Hàm mất mát}
+
+Hàm mất mát được sử dụng là \textbf{Binary Cross-Entropy}:
+
+\begin{equation}
+    \mathcal{L} = -\frac{1}{m} \sum_{i=1}^{m} \left[ y_i \log(\hat{y}_i) + (1 - y_i)\log(1 - \hat{y}_i) \right]
+    \label{eq:bce}
+\end{equation}
+
+với $m$ là số mẫu, $y_i$ là nhãn thật và $\hat{y}_i$ là xác suất dự đoán của mẫu $i$. Khi dự đoán đúng và tự tin ($\hat{y}_i \approx y_i$), thành phần mất mát gần 0; khi dự đoán sai và tự tin, mất mát rất lớn --- cơ chế ``trừng phạt'' hợp lý cho các sai lầm chắc chắn.
+
+\subsection{Tối ưu hóa Adam}
+
+Mạng nơ-ron được huấn luyện bằng \textbf{gradient descent ngẫu nhiên} (SGD): lặp đi lặp lại cập nhật tham số theo hướng âm của gradient trên các lô dữ liệu nhỏ (mini-batch). \textbf{Adam} (Adaptive Moment Estimation) \cite{adam} là thuật toán tối ưu hóa cải tiến được sử dụng trong đề tài, kết hợp hai ý tưởng: \textit{động lượng} (momentum) --- tích lũy trung bình trượt của gradient để tạo quán tính đi qua vùng phẳng --- và \textit{chuẩn hóa gradient thích ứng} theo từng tham số (từ trung bình trượt bình phương gradient). Nhờ đó Adam hội tụ nhanh và ổn định trên các mạng nơ-ron sâu, là lựa chọn mặc định trong hầu hết các mô hình học sâu cho văn bản.
+
+\subsection{Dropout và chuẩn hóa}
+
+\textbf{Dropout} \cite{dropout} là kỹ thuật chống quá khớp (overfitting): trong quá trình huấn luyện, mỗi nơ-ron bị ``tắt'' ngẫu nhiên với xác suất $p$ (trong đề tài $p = 0{,}5$), buộc mạng học các biểu diễn dư thừa, không phụ thuộc vào một nơ-ron cụ thể. Khi kiểm tra, tất cả nơ-ron được bật lại. Quá khớp là nguy cơ lớn với mô hình học sâu trên dữ liệu văn bản (hàng triệu tham số), biểu hiện ở chỗ lỗi trên tập huấn luyện tiếp tục giảm trong khi lỗi trên tập kiểm tra tăng lên.
+
+Bên cạnh Dropout, các mô hình tuyến tính (Logistic Regression, Passive Aggressive) dùng \textbf{chuẩn hóa $L_2$} (thêm biểu thức $\lambda \lVert w \rVert^2$ vào hàm mất mát để ép trọng số nhỏ, mô hình mượt hơn) và \textbf{chuẩn hóa $L_1$} (ép về trọng số thưa, có tác dụng chọn đặc trưng).
+
+\subsection{Early Stopping}
+
+\textbf{Early Stopping} là kỹ thuật chặn huấn luyện sớm: trong suốt quá trình huấn luyện, lỗi trên tập kiểm tra (validation) được theo dõi sau mỗi vòng (epoch); nếu lỗi không giảm sau một số vòng liên tiếp (patience), quá trình huấn luyện dừng lại và trọng số tốt nhất được khôi phục. Kỹ thuật này vừa tiết kiệm thời gian, vừa là phương án chống quá khớp hiệu quả và đơn giản.
+
+\section{Các độ đo đánh giá mô hình}
+
+Với bài toán phân loại nhị phân, chất lượng mô hình được đánh giá trên \textbf{ma trận nhầm lẫn} (confusion matrix) gồm 4 đại lượng:
+
+\begin{itemize}
+    \item \textbf{TP} (True Positive): tin giả được dự đoán đúng là giả.
+    \item \textbf{TN} (True Negative): tin thật được dự đoán đúng là thật.
+    \item \textbf{FP} (False Positive): tin thật bị dự đoán nhầm là giả.
+    \item \textbf{FN} (False Negative): tin giả bị dự đoán nhầm là thật.
+\end{itemize}
+
+Từ đó tính được các độ đo:
+
+\begin{itemize}
+    \item \textbf{Độ chính xác} (Accuracy) --- tỷ lệ dự đoán đúng trên tổng số mẫu:
+    \begin{equation}
+        \mathrm{Accuracy} = \frac{TP + TN}{TP + TN + FP + FN}
+    \end{equation}
+    \item \textbf{Độ chuẩn xác} (Precision) --- trong các bài bị gắn cờ giả, bao nhiêu bài thực sự là giả:
+    \begin{equation}
+        \mathrm{Precision} = \frac{TP}{TP + FP}
+    \end{equation}
+    \item \textbf{Độ bao phủ} (Recall) --- trong các bài giả thực tế, bao nhiêu bài được bắt được:
+    \begin{equation}
+        \mathrm{Recall} = \frac{TP}{TP + FN}
+    \end{equation}
+    \item \textbf{Điểm F1} (F1-score) --- trung bình hài hòa của Precision và Recall, cân bằng hai chỉ tiêu trên:
+    \begin{equation}
+        F1 = 2 \cdot \frac{\mathrm{Precision} \times \mathrm{Recall}}{\mathrm{Precision} + \mathrm{Recall}}
+    \end{equation}
+\end{itemize}
+
+\textbf{Lưu ý quan trọng khi chọn độ đo:} Accuracy có thể gây hiểu nhầm khi dữ liệu lệch lớp. Ví dụ, nếu 95\% bài viết là tin thật, một mô hình ``lười'' dự đoán mọi bài là thật vẫn đạt Accuracy 95\% nhưng Recall trên tin giả bằng 0 --- vô dụng trong thực tế. Trong phát hiện tin giả, \textbf{Recall} (bắt được càng nhiều tin giả càng tốt) và \textbf{Precision} (ít ``báng bổ'' các tin thật hợp lệ) đặc biệt quan trọng vì chi phí của hai loại sai khác nhau: bỏ sót tin giả cho phép tin độc hại lan truyền, còn gắn cờ nhầm tin thật làm giảm uy tín hệ thống.
+
+Một công cụ phân tích khác là \textbf{đường cong ROC} (Receiver Operating Characteristic) vẽ tỷ lệ TP theo tỷ lệ FP khi thay đổi ngưỡng quyết định, và \textbf{diện tích dưới đường cong AUC} (Area Under Curve): AUC = 1 là mô hình hoàn hảo, AUC = 0{,}5 tương đương dự đoán ngẫu nhiên. AUC đo chất lượng phân tách của mô hình \textit{không phụ thuộc ngưỡng}.
+
+Trong bộ dữ liệu ISOT, hai lớp gần cân bằng (51,2\%/48,8\%), nên Accuracy là chỉ tiêu so sánh chính trong báo cáo này, song song với F1-score và ma trận nhầm lẫn để phân tích chi tiết từng loại sai.

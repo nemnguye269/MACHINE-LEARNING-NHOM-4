@@ -1,39 +1,27 @@
-# LaTeX build artifacts
+# ---- Python (khong dua moi truong venv len GitHub) ----
+code/venv/
+code/nltk_data/
+__pycache__/
+*.pyc
+
+# ---- File phu cua LaTeX build ----
 *.aux
-*.fdb_latexmk
-*.fls
 *.log
-*.lof
-*.lot
-*.los
 *.out
 *.toc
-*.xdv
-*.synctex
+*.lof
+*.lot
 *.synctex.gz
-
-# Bibliography and index artifacts
 *.bbl
-*.bcf
 *.blg
-*.idx
-*.ilg
-*.ind
-*.run.xml
-
-# Other LaTeX temporary files
+*.fls
+*.fdb_latexmk
 *.nav
 *.snm
 *.vrb
-_minted-*/
 
-# Editor and operating-system files
+# ---- Cong cu / he thong ----
+.claude/
+.agents/
 .DS_Store
-*.swp
-*.swo
-*~
-.idea/
-.vscode/
-
-# Keep the generated PDF for preview on GitHub
-!main.pdf
+Thumbs.db

@@ -1,7 +1,24 @@
 \UnnumberedChapter{KẾT LUẬN}
 
-Quá trình thực tập tốt nghiệp đã giúp sinh viên có cơ hội tiếp cận môi trường làm việc thực tế, vận dụng kiến thức đã học vào các công việc chuyên môn và hiểu rõ hơn về yêu cầu của ngành Công nghệ thông tin trong doanh nghiệp.
+Đề tài ``Phát hiện tin tức giả mạo sử dụng mạng nơ-ron học sâu'' đã hoàn thành các mục tiêu đặt ra trong khuôn khổ học phần Machine Learning:
 
-Bên cạnh những kết quả đạt được, sinh viên cũng nhận thấy một số hạn chế của bản thân như kinh nghiệm thực tế chưa nhiều, kỹ năng xử lý tình huống còn cần tiếp tục rèn luyện và khả năng làm việc với các hệ thống lớn cần được cải thiện thêm.
+\begin{itemize}
+    \item Nghiên cứu tổng quan hiện trạng tin tức giả mạo, bài toán phân loại tin giả và các hướng tiếp cận từ học máy truyền thống đến học sâu.
+    \item Trình bày cơ sở lý thuyết nền tảng: xử lý ngôn ngữ tự nhiên, các kỹ thuật trích xuất đặc trưng văn bản (TF-IDF, word embedding) và các kiến trúc mạng nơ-ron học sâu (RNN, LSTM, CNN).
+    \item Xây dựng thành công mô hình phân loại tin thật/giả bằng mạng LSTM trên bộ dữ liệu ISOT Fake News với quy trình chuẩn: thu thập, tiền xử lý, huấn luyện và đánh giá.
+    \item So sánh kết quả trên tập kiểm tra: LSTM đạt độ chính xác 99,20\%, cao hơn hẳn Naive Bayes (95,81\%) và Logistic Regression (98,84\%); Passive Aggressive đạt cao nhất 99,42\% nhưng cũng chỉ nhỉnh LSTM 0,22 điểm phần trăm. Nhóm cũng phân tích được nguyên nhân khiến các mô hình tuyến tính TF-IDF rất mạnh trên bộ dữ liệu này là hiện tượng ``rò rỉ nguồn tin'' (tin thật và tin giả được thu từ hai nhóm nguồn khác biệt).
+\end{itemize}
 
-Trong thời gian tới, sinh viên cần tiếp tục học tập, rèn luyện kỹ năng chuyên môn, nâng cao khả năng tự học, kỹ năng làm việc nhóm và kỹ năng giải quyết vấn đề để đáp ứng tốt hơn yêu cầu công việc sau khi tốt nghiệp.
+Quá trình thực hiện đề tài giúp nhóm vận dụng và củng cố các kiến thức đã học trong học phần Machine Learning: quy trình xây dựng bài toán học máy từ dữ liệu thô, kỹ thuật tiền xử lý văn bản, nguyên lý hoạt động của mạng nơ-ron hồi tiếp, các kỹ thuật huấn luyện (tối ưu hóa Adam, Dropout, Early Stopping) và phương pháp đánh giá mô hình bằng Accuracy, Precision, Recall, F1-score. Kỹ năng lập trình Python với các thư viện chuyên dụng (TensorFlow/Keras, scikit-learn, NLTK) cũng được rèn luyện thực tế qua từng bước thí nghiệm.
+
+Ngoài kết quả đạt được, đề tài vẫn còn một số hạn chế: bộ dữ liệu chỉ gồm tin tức tiếng Anh và có văn phong tin giả tương đối dễ phân biệt; mô hình chưa sử dụng thông tin nguồn tin, hình ảnh hoặc mạng lan truyền trên mạng xã hội; hiệu năng suy luận chưa được tối ưu cho triển khai thời gian thực.
+
+Trong thời gian tới, đề tài có thể được phát triển theo các hướng:
+
+\begin{itemize}
+    \item Mở rộng sang dữ liệu tin tức tiếng Việt (ví dụ: các bộ dữ liệu tin giả tiếng Việt hoặc dữ liệu tự thu thập) với mô hình PhoBERT.
+    \item Thử nghiệm các kiến trúc hiện đại hơn: Bi-LSTM, CNN-LSTM kết hợp, Transformer (BERT) để so sánh hiệu năng chi tiết.
+    \item Kết hợp đa nguồn dữ liệu: nội dung văn bản, đặc điểm người đăng, phản ứng của người đọc trên mạng xã hội.
+    \item Kiểm chứng lại hiệu quả của LSTM trên bộ dữ liệu cân bằng nguồn tin hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống, để làm rõ giá trị thực của mô hình học ngữ cảnh.
+    \item Triển khai mô hình thành dịch vụ web hoàn chỉnh (API backend, ứng dụng web) phục vụ nhiều người dùng theo thời gian thực, thay vì demo cục bộ như hiện tại.
+\end{itemize}
