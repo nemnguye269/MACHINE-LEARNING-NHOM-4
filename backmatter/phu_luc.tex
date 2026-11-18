@@ -129,3 +129,18 @@ Kết quả mỗi lần chạy được ghi ra thư mục results/ gồm: bảng
     \item Tài liệu tham khảo chính: bài báo ISOT \cite{ahmed2017}, bài báo gốc của thuật toán KNN \cite{coverhart}, tài liệu scikit-learn \cite{sklearn}; các bài báo LSTM \cite{lstm}, Word2Vec \cite{word2vec} và CNN cho phân loại câu \cite{kim2014} được dẫn trong phần tổng quan nghiên cứu ở chương 1.
     \item Sổ ghi chép quá trình thí nghiệm: toàn bộ mã nguồn Python của nhóm (tệp train\_and\_evaluate.py huấn luyện và đánh giá, tệp experiments.py chạy các kịch bản E3--E5, tệp app.py giao diện demo Streamlit) kèm kết quả dạng JSON/CSV và các biểu đồ kết quả.
 \end{itemize}
+
+\section*{Phụ lục 4. Khai báo sử dụng công cụ AI}
+
+Theo mục 2.3 của hướng dẫn học phần, nhóm khai báo phạm vi sử dụng công cụ AI như sau.
+
+\begin{itemize}
+    \item \textbf{Công cụ:} trợ lý AI dạng mô hình ngôn ngữ lớn, dùng qua giao diện hội thoại.
+    \item \textbf{Mục đích:} giải thích lại lý thuyết (KNN, cosine similarity, TF-IDF, MultinomialNB) để đối chiếu với giáo trình; gợi ý cấu trúc hàm tiền xử lý và tham số vector hóa; gợi ý cách đọc thông báo lỗi; gợi ý bố cục bảng biểu, chú thích hình và cách diễn đạt một số đoạn văn; gợi ý bảng màu và bố cục giao diện Streamlit.
+    \item \textbf{Phần nhóm tự thực hiện:} chọn dữ liệu và cách chia tập, quyết định cấu hình mô hình, chạy toàn bộ thí nghiệm trên máy của nhóm, kiểm tra chéo kết quả khi chạy lại, viết và sửa mã nguồn, đọc lại toàn bộ báo cáo.
+    \item \textbf{Số liệu:} mọi con số trong báo cáo lấy từ các tệp trong \texttt{code/results/} do nhóm tự sinh ra; không có số liệu nào do AI tạo.
+    \item \textbf{Kiểm chứng:} ba lệnh \texttt{train\_and\_evaluate.py}, \texttt{experiments\_representation.py} và \texttt{build\_reference.py} tái tạo lại toàn bộ bảng và biểu đồ của chương 3.
+\end{itemize}
+
+Khai báo đầy đủ được lưu tại tệp \texttt{AI\_USAGE.md} trong kho mã nguồn của nhóm.
+

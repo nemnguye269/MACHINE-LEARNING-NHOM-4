@@ -260,6 +260,8 @@ E4 & Thay đổi phép đo khoảng cách: cosine / euclidean & Ảnh hưởng c
 \hline
 E5 & Thay đổi trọng số láng giềng: distance / uniform & Ảnh hưởng của cơ chế bỏ phiếu \\
 \hline
+E6 & Thay đổi cách biểu diễn: BoW / TF-IDF (unigram, 1--2gram, min\_df, số chiều) & Chọn cách vector hóa cho mô hình chính \\
+\hline
 \end{tabular}
 \Nguon{Nhóm tự xây dựng}
 \end{table}
@@ -437,6 +439,48 @@ Khi loại bỏ các bài rỗng khỏi tập huấn luyện, kết quả euclid
 \subsubsection{E5 --- Ảnh hưởng của cơ chế bỏ phiếu}
 
 Thay bỏ phiếu đa số thuần túy (uniform) bằng bỏ phiếu có trọng số theo khoảng cách (distance) làm độ chính xác tăng nhẹ từ 89,25\% lên 89,35\%. Chênh lệch nhỏ cho thấy trong bộ dữ liệu này hai cơ chế bỏ phiếu gần tương đương; tuy nhiên trọng số theo khoảng cách vẫn được giữ làm cấu hình chuẩn vì hai lý do: (i) cho phép một láng giềng ở rất gần (bài viết gần như trùng lặp) lấn át các láng giềng ở xa, hợp lý với bản chất ``độ tương đồng''; (ii) cho ra \textbf{xác suất dự đoán mềm} liên tục --- điều kiện cần để vẽ đường cong ROC và linh hoạt điều chỉnh ngưỡng cảnh báo như đã phân tích.
+
+\subsubsection{E6 --- So sánh Bag-of-Words và TF-IDF}
+
+Đề cương yêu cầu thử nghiệm cả hai cách biểu diễn văn bản cơ bản. Nhóm giữ nguyên dữ liệu, phép tiền xử lý và cách chia tập, chỉ đổi vector hóa: \textbf{Bag-of-Words} (CountVectorizer --- đếm số lần từ xuất hiện) và \textbf{TF-IDF} (TfidfVectorizer --- nhân thêm trọng số nghịch tần suất tài liệu, mục \ref{sec:tfidf}). Mỗi cách được thử với unigram và 1--2gram, thay đổi min\_df và số đặc trưng tối đa; với mỗi cấu hình, nhóm huấn luyện MultinomialNB (mốc so sánh) và KNN ($k = 5$, cosine, distance). Kết quả ở bảng \ref{tab:bieu-dien} và hình \ref{fig:so-sanh-bieu-dien}.
+
+\begin{table}[H]
+\centering
+\caption{So sánh Bag-of-Words và TF-IDF trên cùng một cách chia dữ liệu (tập kiểm tra 9.777 bài)}
+\label{tab:bieu-dien}
+\small
+\begin{tabular}{|l|l|l|r|r|r|r|}
+\hline
+\textbf{Biểu diễn} & \textbf{Cấu hình} & \textbf{Mô hình} & \textbf{Acc (\%)} & \textbf{F1 (\%)} & \textbf{Số chiều} & \textbf{Dự đoán (s)} \\
+\hline
+BoW & BoW unigram & NB & 95,97 & 95,47 & 154.464 & 0,0 \\ \hline
+BoW & BoW 1-2gram & NB & \textbf{96,68} & \textbf{96,23} & 2.846.173 & 0,4 \\ \hline
+TF-IDF & TF-IDF unigram & NB & 93,38 & 92,28 & 154.464 & 0,0 \\ \hline
+TF-IDF & TF-IDF 1-2gram & NB & 95,81 & 95,35 & 50.000 & 0,0 \\ \hline
+TF-IDF & TF-IDF min_df=3 & NB & 95,82 & 95,36 & 50.000 & 0,0 \\ \hline
+TF-IDF & TF-IDF 20.000 đặc trưng & NB & 95,63 & 95,16 & 20.000 & 0,0 \\ \hline
+BoW & BoW 1-2gram & KNN & 87,94 & 84,82 & 2.846.173 & 77,8 \\ \hline
+TF-IDF & TF-IDF 1-2gram & KNN & \textbf{89,35} & \textbf{87,45} & 50.000 & 43,9 \\ \hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện (results/bieu-dien.json, random_state = 42)}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/so-sanh-bieu-dien.png}
+    \caption{Độ chính xác theo cách biểu diễn văn bản, cho MultinomialNB và KNN}
+    \label{fig:so-sanh-bieu-dien}
+    \Nguon{Nhóm tự thực hiện (matplotlib, kịch bản experiments\_representation.py)}
+\end{figure}
+
+Từ bảng \ref{tab:bieu-dien} rút ra bốn nhận xét:
+
+\begin{itemize}
+    \item \textbf{1--2gram luôn tốt hơn unigram.} Với NB, TF-IDF tăng từ 93,38\% lên 95,81\% khi thêm bigram; với BoW, từ 95,97\% lên 96,68\%. Cặp từ giữ lại được những cụm có sức phân loại như tên tổ chức, hãng tin hay ``fake news''.
+    \item \textbf{BoW thắng TF-IDF ở mô hình tuyến tính.} BoW 1--2gram đạt 96,68\%, cao hơn TF-IDF 1--2gram (95,81\%) dù dùng tới 2.846.173 chiều so với 50.000. Trong bộ ISOT, sự lặp lại của tên hãng tin và cú pháp giật gân chính là tín hiệu phân loại; TF-IDF hạ trọng số từ xuất hiện thường xuyên nên làm mất một phần tín hiệu này. Kết quả này cho thấy TF-IDF không phải lúc nào cũng vượt BoW --- cần thử nghiệm trên chính tập dữ liệu của đề tài.
+    \item \textbf{min\_df và số đặc trưng có tác động nhỏ.} Đặt min\_df = 3 cho accuracy 95,82\%, gần như không đổi so với 95,81\%, vì max\_features = 50.000 đã loại bỏ phần lớn n-gram hiếm từ trước. Giảm xuống 20.000 chiều làm accuracy giảm nhẹ xuống 95,63\%, đổi lại ma trận gọn hơn.
+    \item \textbf{Với KNN, ưu tiên TF-IDF.} Cấu hình KNN tốt nhất trong bảng là TF-IDF 1-2gram với accuracy 89,35\%. Dự đoán của KNN phải tính khoảng cách tới 29.328 bài huấn luyện, nên chi phí tăng nhanh theo số chiều; TF-IDF 50.000 chiều giữ độ chính xác gần BoW nhưng bộ nhớ và thời gian dự đoán thấp hơn đáng kể. Đây là lý do nhóm chọn TF-IDF cho mô hình chính và cho giao diện demo.
+\end{itemize}
 
 \subsection{Phân tích lỗi phân loại}
 

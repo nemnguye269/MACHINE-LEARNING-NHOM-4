@@ -1,0 +1,14 @@
+[theme]
+base = "light"
+primaryColor = "#16181C"
+backgroundColor = "#FBFAF7"
+secondaryBackgroundColor = "#F2EFE9"
+textColor = "#16181C"
+baseRadius = "0.6rem"
+showWidgetBorder = true
+
+[browser]
+gatherUsageStats = false
+
+[server]
+headless = true

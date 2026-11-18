@@ -26,9 +26,20 @@ Báo cáo học phần **Machine Learning** — Trường Đại học Đại Na
 
 - **KNN cấu hình:** k = 5, khoảng cách cosine, trọng số theo khoảng cách (distance), TF-IDF n-gram 1–2 (50.000 đặc trưng).
 - **Thí nghiệm E3–E5:**
-  - E3 — số láng giềng k: 87,48% (k=1) → **89,76% (k=9)** → 89,63% (k=11); vùng k = 5–9 ổn định.
+  - E3 — giá trị k: 87,48% (k=1) → **89,76% (k=9)** → 89,63% (k=11); vùng k = 5–9 ổn định.
   - E4 — phép đo khoảng cách: cosine 89,35% vs euclidean 55,61% (nguyên nhân: các bài rỗng sau tiền xử lý tạo vector 0 "lọt" vào top-k euclidean; khi loại 3 bài rỗng khỏi tập train, euclidean trở về ≈ cosine).
   - E5 — cơ chế bỏ phiếu: distance 89,35% vs uniform 89,25%.
+- **So sánh cách biểu diễn (BoW vs TF-IDF, cùng dữ liệu và random_state = 42):**
+
+  | Cấu hình | Mô hình | Accuracy | Số chiều | Dự đoán |
+  |---|---|---|---|---|
+  | BoW 1–2gram | Naive Bayes | **96,68%** | 2.846.173 | 0,0s |
+  | TF-IDF 1–2gram | Naive Bayes | 95,81% | 50.000 | 0,0s |
+  | BoW 1–2gram | KNN | 87,94% | 2.846.173 | 78s |
+  | TF-IDF 1–2gram | KNN | **89,35%** | 50.000 | 44s |
+
+  BoW thắng NB vì sự lặp lại của tên hãng tin/cú pháp giật gân là tín hiệu tốt; TF-IDF thắng KNN vì giữ độ chính xác cao hơn mà chi phí theo số chiều thấp hơn nhiều. Chi tiết 8 cấu hình tại `code/results/bieu-dien.json` và chương 3 (E6).
+
 - Điểm thảo luận đặc trưng của KNN: **lazy learning** — "huấn luyện" 0,03s (chỉ ghi nhớ dữ liệu) nhưng dự đoán 183,29s (~9.000 lần chậm mô hình tuyến tính, ≈ 19 ms/bài).
 
 ## Cấu trúc repo
@@ -44,11 +55,16 @@ Báo cáo học phần **Machine Learning** — Trường Đại học Đại Na
 ├── code/                 # Mã nguồn thí nghiệm
 │   ├── train_and_evaluate.py   # Tiền xử lý + TF-IDF + KNN + 3 mô hình tham chiếu
 │   ├── experiments.py          # Kịch bản thí nghiệm E3–E5
+│   ├── experiments_representation.py  # So sánh Bag-of-Words và TF-IDF
+│   ├── build_reference.py      # Tạo knn_ref.pkl cho panel 5 bài gần nhất
 │   ├── app.py                  # Demo Streamlit (load knn_model.pkl)
 │   ├── run_train.bat / run_app.bat
 │   ├── data/                   # Fake.csv + True.csv (ISOT, tải từ Kaggle)
 │   ├── knn_model.pkl           # Mô hình KNN đã xây dựng (cho demo)
 │   ├── tfidf_vectorizer.pkl    # Vectorizer TF-IDF (cho demo)
+│   ├── knn_ref.pkl             # Tiêu đề 29.328 bài huấn luyện (cho demo)
+│   ├── .streamlit/config.toml  # Theme Streamlit
+│   ├── assets/favicon.png      # Favicon demo
 │   └── results/                # Bảng số liệu + biểu đồ kết quả
 └── main.pdf              # Báo cáo biên dịch xong
 ```
@@ -65,8 +81,14 @@ Báo cáo học phần **Machine Learning** — Trường Đại học Đại Na
 2. Tải bộ dữ liệu [ISOT Fake News (Kaggle)](https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset), đặt `Fake.csv` + `True.csv` vào `code\data\`.
 3. Huấn luyện + đánh giá: double-click `run_train.bat` (hoặc `python train_and_evaluate.py`) — vài phút trên CPU.
 4. Thí nghiệm E3–E5: `python experiments.py` (khoảng 25 phút do chi phí dự đoán KNN).
-5. Demo Streamlit: double-click `run_app.bat` (hoặc `streamlit run app.py`).
+5. So sánh cách biểu diễn (BoW vs TF-IDF): `python experiments_representation.py` (khoảng 10 phút).
+6. Dữ liệu tham chiếu cho giao diện: `python build_reference.py` (vài giây).
+7. Demo Streamlit: double-click `run_app.bat` (hoặc `streamlit run app.py`); gồm 2 tab: Kiểm chứng và Kết quả thực nghiệm.
 
 ## Biên dịch báo cáo
 
 Biên dịch `main.tex` bằng **XeLaTeX 2–3 lần** (MiKTeX/TeX Live) để cập nhật mục lục và tham chiếu.
+
+## Khai báo sử dụng AI
+
+Xem `AI_USAGE.md` ở thư mục gốc và Phụ lục 4 của báo cáo.
