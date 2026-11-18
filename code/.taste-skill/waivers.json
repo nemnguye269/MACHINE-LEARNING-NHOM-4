@@ -1,0 +1,22 @@
+[
+  {
+    "check": "copy-headline",
+    "target": "h1#kiem-chung-tin-tuc-truoc-khi-chia-se",
+    "reason": "The page is Vietnamese for a Vietnamese course; the headline names the task (news verification) in Vietnamese. The checker only matches English category tokens."
+  },
+  {
+    "check": "moment-none",
+    "target": "(the page)",
+    "reason": "A tool UI has no award-site moment section. Its one content-rich moment is the five real nearest-neighbour articles with similarity rails, shown after analysis."
+  },
+  {
+    "check": "one-section",
+    "target": "main#stMain > div.stMainBlockContainer",
+    "reason": "Streamlit owns the main element and renders injected markup inside divs; page-authored sections cannot be direct children of main without replacing the framework."
+  },
+  {
+    "check": "hero-screen",
+    "target": "main#stMain > div.stMainBlockContainer",
+    "reason": "The masthead measured 897px on a 900px checker screen, i.e. 3px above the fold. It is a tool masthead whose action sits in the panel below, not a standalone marketing hero."
+  }
+]
