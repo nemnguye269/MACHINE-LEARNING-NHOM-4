@@ -392,9 +392,9 @@ EMPTY = """
       <p class="d">Mỗi bài thành một vector từ. Cosine similarity đo góc giữa hai vector:
       1,00 là dùng cùng bộ từ, 0 là không có từ nào chung. Bài của bạn được so với
       cả 29.328 bài đã biết.</p></div></li>
-    <li><span class="n">3</span><div><p class="t">5 bài gần nhất bỏ phiếu</p>
-      <p class="d">KNN lấy 5 bài có similarity cao nhất, tức distance = 1 − similarity
-      nhỏ nhất; bài càng giống thì phiếu càng nặng.</p></div></li>
+    <li><span class="n">3</span><div><p class="t">Chấm điểm dựa trên 5 bài giống nhất</p>
+      <p class="d">Mô hình chọn 5 bài có nội dung gần giống bài bạn nhất trong tập đã biết.
+      Bài nào giống hơn thì ảnh hưởng đến kết quả nhiều hơn.</p></div></li>
   </ol>
 </div>
 """
@@ -534,15 +534,15 @@ def render_result(res: dict, threshold_pct: int) -> str:
         bar_real = round(p_real * 100)
         bar_fake = 100 - bar_real
         if flagged:
-            note = (f"5 bài giống nhất nghiêng về tin giả, và bài càng giống thì "
-                    f"phiếu càng có giá. Mô hình chấm {fmt_pct(p_fake)}% tin giả, "
-                    f"vượt ngưỡng {threshold_pct}%, nên bài này bị gắn cờ. "
-                    f"Tăng ngưỡng nếu bạn muốn ít cảnh báo hơn.")
+            note = (f"So với các bài đã biết, bài của bạn giống tin giả hơn tin thật, "
+                    f"nên mô hình chấm {fmt_pct(p_fake)}% tin giả. Con số này vượt "
+                    f"ngưỡng {threshold_pct}%, nên bài bị gắn cờ. Tăng ngưỡng nếu bạn "
+                    f"muốn ít cảnh báo hơn.")
         else:
-            note = (f"5 bài giống nhất nghiêng về tin thật, và bài càng giống thì "
-                    f"phiếu càng có giá. Mô hình chỉ chấm {fmt_pct(p_fake)}% tin giả, "
-                    f"thấp hơn ngưỡng {threshold_pct}%, nên bài này được coi là tin thật. "
-                    f"Giảm ngưỡng nếu bạn muốn bắt thêm bài đáng ngờ.")
+            note = (f"So với các bài đã biết, bài của bạn giống tin thật hơn tin giả, "
+                    f"nên mô hình chỉ chấm {fmt_pct(p_fake)}% tin giả. Con số này thấp "
+                    f"hơn ngưỡng {threshold_pct}%, nên bài được coi là tin thật. Giảm "
+                    f"ngưỡng nếu bạn muốn bắt thêm bài đáng ngờ.")
 
     rows = []
     for i, nb in enumerate(res["neighbors"], start=1):
@@ -559,11 +559,11 @@ def render_result(res: dict, threshold_pct: int) -> str:
 
     if res["neighbors"]:
         evidence = (
-            '<div class="ev"><div class="ev-head"><h3>5 bài gần nhất trong tập huấn luyện</h3>'
-            '<span>distance = 1 − cosine similarity</span></div><ol>' + "".join(rows) + "</ol>"
-            '<p class="ev-foot"><b>d</b> càng nhỏ càng giống: 0 là trùng khít, '
-            '1 là không có từ nào chung. 5 bài này chính là những phiếu tạo ra con số '
-            'phần trăm ở trên.</p></div>'
+            '<div class="ev"><div class="ev-head"><h3>5 bài có nội dung gần giống nhất</h3>'
+            '<span>trong 29.328 bài đã biết</span></div><ol>' + "".join(rows) + "</ol>"
+            '<p class="ev-foot">Đây là 5 bài có nội dung gần giống bài bạn dán nhất, '
+            'đo bằng cosine similarity: <b>d</b> càng nhỏ càng giống (0 là trùng khít). '
+            'Mô hình dùng mức độ giống của chúng để chấm con số phần trăm ở trên.</p></div>'
         )
     elif res["has_ref"]:
         evidence = ""
