@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Giao dien demo kiem tra tin that/gia bang Streamlit.
+Giao dien demo kiem tra tin that/gia bang Streamlit (mo hinh KNN).
 Cach chay:
     streamlit run app.py
-(Yeu cau da chay train_and_evaluate.py de co lstm_fake_news.keras va tokenizer.pkl)
+(Yeu cau da chay train_and_evaluate.py de co knn_model.pkl va tfidf_vectorizer.pkl)
 """
 
 import pickle
@@ -12,39 +12,34 @@ import string
 from pathlib import Path
 
 import nltk
-import numpy as np
 import streamlit as st
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
-from tensorflow.keras.models import load_model
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-
-MAX_LEN = 256
 
 st.set_page_config(page_title="Kiem tra tin that/gia", page_icon="📰")
 st.title("📰 Kiểm tra tin thật hay tin giả")
 st.write("Dán nội dung (tiêu đề + nội dung bài viết) vào khung dưới rồi bấm **Kiểm tra**.")
 
 # =========================
-# Tai mo hinh + tokenizer
+# Tai mo hinh KNN + vectorizer TF-IDF
 # =========================
 @st.cache_resource
 def load_assets():
-    model = load_model("lstm_fake_news.keras")
-    with open("tokenizer.pkl", "rb") as f:
-        tokenizer = pickle.load(f)
-    return model, tokenizer
+    with open("knn_model.pkl", "rb") as f:
+        model = pickle.load(f)
+    with open("tfidf_vectorizer.pkl", "rb") as f:
+        vectorizer = pickle.load(f)
+    return model, vectorizer
 
-if not Path("lstm_fake_news.keras").exists():
-    st.error("Chưa tìm thấy lstm_fake_news.keras. Hãy chạy `python train_and_evaluate.py` trước.")
+if not (Path("knn_model.pkl").exists() and Path("tfidf_vectorizer.pkl").exists()):
+    st.error("Chưa tìm thấy knn_model.pkl / tfidf_vectorizer.pkl. Hãy chạy `python train_and_evaluate.py` trước.")
     st.stop()
 
-model, tokenizer = load_assets()
+model, vectorizer = load_assets()
 
 # =========================
-# Ham tien xu ly (giiong luc huan luyen)
+# Ham tien xu ly (giong luc huan luyen)
 # =========================
-import nltk
 NLTK_DIR = Path(__file__).resolve().parent / "nltk_data"
 NLTK_DIR.mkdir(exist_ok=True)
 nltk.data.path[:] = [str(NLTK_DIR)] + [
@@ -79,8 +74,8 @@ if st.button("🔍 Kiểm tra"):
         st.warning("Bạn chưa nhập nội dung nào.")
     else:
         cleaned = clean_text(text)
-        seq = pad_sequences(tokenizer.texts_to_sequences([cleaned]), maxlen=MAX_LEN)
-        p_fake = float(model.predict(seq, verbose=0)[0][0])
+        X = vectorizer.transform([cleaned])
+        p_fake = float(model.predict_proba(X)[0][1])
         p_real = 1 - p_fake
 
         st.subheader("Kết quả")

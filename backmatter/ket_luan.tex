@@ -1,24 +1,25 @@
 \UnnumberedChapter{KẾT LUẬN}
 
-Đề tài ``Phát hiện tin tức giả mạo sử dụng mạng nơ-ron học sâu'' đã hoàn thành các mục tiêu đặt ra trong khuôn khổ học phần Machine Learning:
+Đề tài ``Phát hiện tin tức giả mạo sử dụng thuật toán KNN'' đã hoàn thành các mục tiêu đặt ra trong khuôn khổ học phần Machine Learning:
 
 \begin{itemize}
     \item Nghiên cứu tổng quan hiện trạng tin tức giả mạo, bài toán phân loại tin giả và các hướng tiếp cận từ học máy truyền thống đến học sâu.
-    \item Trình bày cơ sở lý thuyết nền tảng: xử lý ngôn ngữ tự nhiên, các kỹ thuật trích xuất đặc trưng văn bản (TF-IDF, word embedding) và các kiến trúc mạng nơ-ron học sâu (RNN, LSTM, CNN).
-    \item Xây dựng thành công mô hình phân loại tin thật/giả bằng mạng LSTM trên bộ dữ liệu ISOT Fake News với quy trình chuẩn: thu thập, tiền xử lý, huấn luyện và đánh giá.
-    \item So sánh kết quả trên tập kiểm tra: LSTM đạt độ chính xác 99,20\%, cao hơn hẳn Naive Bayes (95,81\%) và Logistic Regression (98,84\%); Passive Aggressive đạt cao nhất 99,42\% nhưng cũng chỉ nhỉnh LSTM 0,22 điểm phần trăm. Nhóm cũng phân tích được nguyên nhân khiến các mô hình tuyến tính TF-IDF rất mạnh trên bộ dữ liệu này là hiện tượng ``rò rỉ nguồn tin'' (tin thật và tin giả được thu từ hai nhóm nguồn khác biệt).
+    \item Trình bày cơ sở lý thuyết nền tảng: xử lý ngôn ngữ tự nhiên, kỹ thuật trích xuất đặc trưng văn bản (TF-IDF), các mô hình học máy truyền thống và thuật toán láng giềng gần nhất (KNN) với các thành phần cốt lõi: phép đo khoảng cách, lựa chọn số láng giềng $k$, cơ chế bỏ phiếu có trọng số.
+    \item Xây dựng thành công mô hình phân loại tin thật/giả bằng thuật toán KNN trên đặc trưng TF-IDF với bộ dữ liệu ISOT Fake News, theo quy trình chuẩn: thu thập, tiền xử lý, vector hóa, xây dựng mô hình và đánh giá.
+    \item Thực hiện chuỗi thí nghiệm có kiểm soát E1--E5: so sánh KNN với ba mô hình tham chiếu (KNN đạt 89,35\% so với Naive Bayes 95,81\%, Logistic Regression 98,84\%, Passive Aggressive 99,37\%); khảo sát ảnh hưởng của số láng giềng $k$ (87,48\%--89,76\% cho $k$ từ 1 đến 11), phép đo khoảng cách và cơ chế trọng số; phân tích trung thực giới hạn của KNN trên dữ liệu văn bản (lazy learning, chi phí dự đoán, độ nhạy với đặc trưng thưa chiều cao) và nguyên nhân khiến các mô hình tuyến tính rất mạnh trên bộ dữ liệu này.
 \end{itemize}
 
-Quá trình thực hiện đề tài giúp nhóm vận dụng và củng cố các kiến thức đã học trong học phần Machine Learning: quy trình xây dựng bài toán học máy từ dữ liệu thô, kỹ thuật tiền xử lý văn bản, nguyên lý hoạt động của mạng nơ-ron hồi tiếp, các kỹ thuật huấn luyện (tối ưu hóa Adam, Dropout, Early Stopping) và phương pháp đánh giá mô hình bằng Accuracy, Precision, Recall, F1-score. Kỹ năng lập trình Python với các thư viện chuyên dụng (TensorFlow/Keras, scikit-learn, NLTK) cũng được rèn luyện thực tế qua từng bước thí nghiệm.
+Quá trình thực hiện đề tài giúp nhóm vận dụng và củng cố các kiến thức đã học trong học phần Machine Learning: quy trình xây dựng bài toán học máy từ dữ liệu thô, kỹ thuật tiền xử lý văn bản, trích xuất đặc trưng TF-IDF, nguyên lý của học dựa trên mẫu (instance-based/lazy learning), tầm quan trọng của phép đo khoảng cách và việc lựa chọn siêu tham số, cũng như phương pháp đánh giá mô hình bằng Accuracy, Precision, Recall, F1-score. Kỹ năng lập trình Python với các thư viện chuyên dụng (scikit-learn, NLTK, Streamlit) cũng được rèn luyện thực tế qua từng bước thí nghiệm.
 
-Ngoài kết quả đạt được, đề tài vẫn còn một số hạn chế: bộ dữ liệu chỉ gồm tin tức tiếng Anh và có văn phong tin giả tương đối dễ phân biệt; mô hình chưa sử dụng thông tin nguồn tin, hình ảnh hoặc mạng lan truyền trên mạng xã hội; hiệu năng suy luận chưa được tối ưu cho triển khai thời gian thực.
+Ngoài kết quả đạt được, đề tài vẫn còn một số hạn chế: độ chính xác của KNN (89,35\%) là thấp nhất trong các mô hình thí nghiệm, đặc biệt recall trên lớp tin giả chỉ đạt 82,34\%; thời gian dự đoán lớn do đặc tính lazy learning (183 giây cho 9.777 bài, so với 0,02 giây của các mô hình tuyến tính); bộ dữ liệu chỉ gồm tin tức tiếng Anh và tin thật/giả được thu từ hai nhóm nguồn khác biệt; mô hình chưa sử dụng thông tin nguồn tin, hình ảnh hoặc mạng lan truyền trên mạng xã hội.
 
 Trong thời gian tới, đề tài có thể được phát triển theo các hướng:
 
 \begin{itemize}
-    \item Mở rộng sang dữ liệu tin tức tiếng Việt (ví dụ: các bộ dữ liệu tin giả tiếng Việt hoặc dữ liệu tự thu thập) với mô hình PhoBERT.
-    \item Thử nghiệm các kiến trúc hiện đại hơn: Bi-LSTM, CNN-LSTM kết hợp, Transformer (BERT) để so sánh hiệu năng chi tiết.
+    \item \textbf{Giảm chiều đặc trưng} trước khi chạy KNN (TruncatedSVD/LSA) để tăng tốc dự đoán, giảm bộ nhớ và phần nào hóa giải ``lời nguyền chiều'' trên ma trận TF-IDF thưa 50.000 chiều.
+    \item \textbf{Dùng biểu diễn ngữ nghĩa cho văn bản} (word embedding trung bình, sentence transformers) thay cho TF-IDF, để khoảng cách giữa hai bài viết phản ánh ý nghĩa thay vì chỉ văn phong từ ngữ.
+    \item \textbf{Tăng tốc láng giềng gần nhất} bằng cấu trúc chỉ mục chuyên dụng (KD-tree, chỉ mục gần đúng FAISS/Annoy), hướng tới suy luận thời gian thực cho ứng dụng demo.
+    \item Mở rộng sang dữ liệu tin tức tiếng Việt (các bộ dữ liệu tin giả tiếng Việt hoặc dữ liệu tự thu thập).
     \item Kết hợp đa nguồn dữ liệu: nội dung văn bản, đặc điểm người đăng, phản ứng của người đọc trên mạng xã hội.
-    \item Kiểm chứng lại hiệu quả của LSTM trên bộ dữ liệu cân bằng nguồn tin hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống, để làm rõ giá trị thực của mô hình học ngữ cảnh.
     \item Triển khai mô hình thành dịch vụ web hoàn chỉnh (API backend, ứng dụng web) phục vụ nhiều người dùng theo thời gian thực, thay vì demo cục bộ như hiện tại.
 \end{itemize}

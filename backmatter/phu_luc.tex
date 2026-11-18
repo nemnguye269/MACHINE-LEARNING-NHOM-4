@@ -3,7 +3,7 @@
 
 \section*{Phụ lục 1. Mã nguồn chính của mô hình}
 
-Phần mã nguồn dưới đây trình bày các bước cốt lõi: tiền xử lý, xây dựng và huấn luyện mô hình LSTM bằng Python (TensorFlow/Keras). Mã nguồn đầy đủ được lưu trữ trong kho GitHub của nhóm (xem Phụ lục 2).
+Phần mã nguồn dưới đây trình bày các bước cốt lõi: tiền xử lý, vector hóa TF-IDF và xây dựng mô hình KNN bằng Python (scikit-learn). Mã nguồn đầy đủ được lưu trữ trong kho GitHub của nhóm (xem Phụ lục 3).
 
 \begin{enumerate}
     \item Tiền xử lý dữ liệu:
@@ -17,10 +17,11 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
-fake = pd.read_csv("Fake.csv");  fake["label"] = 1
-true = pd.read_csv("True.csv");  true["label"] = 0
+fake = pd.read_csv("data/Fake.csv");  fake["label"] = 1
+true = pd.read_csv("data/True.csv");  true["label"] = 0
 data = pd.concat([fake, true]).sample(frac=1, random_state=42)
-data["text"] = data["title"] + " " + data["text"]
+data["text"] = data["title"].fillna("") + " " + data["text"].fillna("")
+data = data[["text", "label"]].dropna().drop_duplicates(subset="text")
 
 stop_words = set(stopwords.words("english"))
 stemmer = PorterStemmer()
@@ -32,52 +33,38 @@ def clean_text(s):
     s = re.sub(r"\d+", " ", s)
     words = [w for w in s.split() if w not in stop_words]
     return " ".join(stemmer.stem(w) for w in words)
-
-data["text"] = data["text"].apply(clean_text)
 \end{verbatim}
 }
 
 \begin{enumerate}
     \setcounter{enumi}{1}
-    \item Vector hóa, xây dựng và huấn luyện mô hình LSTM:
+    \item Vector hóa TF-IDF và xây dựng mô hình KNN (mô hình chính):
 \end{enumerate}
 
 {\small
 \begin{verbatim}
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import (Embedding, LSTM, Dropout,
-                                     Dense)
-from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
 
 X_train, X_test, y_train, y_test = train_test_split(
     data["text"], data["label"],
     test_size=0.25, random_state=42)
 
-tokenizer = Tokenizer(num_words=10000)
-tokenizer.fit_on_texts(X_train)
-pad = lambda s: pad_sequences(
-    tokenizer.texts_to_sequences(s), maxlen=256)
+X_train = X_train.apply(clean_text)
+X_test  = X_test.apply(clean_text)
 
-model = Sequential([
-    Embedding(10000, 64),
-    LSTM(64),
-    Dropout(0.5),
-    Dense(32, activation="relu"),
-    Dense(1, activation="sigmoid")
-])
+# TF-IDF n-gram 1..2, toi da 50.000 dac trung, chuan hoa L2 (mac dinh)
+tfidf = TfidfVectorizer(ngram_range=(1, 2), max_features=50000)
+Xtr = tfidf.fit_transform(X_train)   # fit CHI tren tap huan luyen
+Xte = tfidf.transform(X_test)
 
-model.compile(optimizer="adam",
-              loss="binary_crossentropy",
-              metrics=["accuracy"])
-
-model.fit(pad(X_train), y_train, validation_data=(
-              pad(X_test), y_test),
-    epochs=10, batch_size=64,
-    callbacks=[EarlyStopping(patience=2,
-                             restore_best_weights=True)])
+# KNN: k = 5, khoang cach cosine, trong so theo khoang cach
+knn = KNeighborsClassifier(n_neighbors=5, metric="cosine",
+                           weights="distance", algorithm="brute")
+knn.fit(Xtr, y_train)                # voi KNN: chi la "ghi nho" du lieu
+y_pred = knn.predict(Xte)
+y_prob = knn.predict_proba(Xte)[:, 1]
 \end{verbatim}
 }
 
@@ -89,12 +76,12 @@ model.fit(pad(X_train), y_train, validation_data=(
 {\small
 \begin{verbatim}
 from sklearn.metrics import (classification_report,
-                             confusion_matrix)
+                             confusion_matrix, roc_auc_score)
 
-y_pred = (model.predict(pad(X_test)) >= 0.5).astype(int)
 print(classification_report(y_test, y_pred,
-      target_names=["Thật", "Giả"]))
+      target_names=["That", "Gia"]))
 print(confusion_matrix(y_test, y_pred))
+print("AUC =", roc_auc_score(y_test, y_prob))
 \end{verbatim}
 }
 
@@ -103,7 +90,7 @@ print(confusion_matrix(y_test, y_pred))
 Nhóm cung cấp hướng dẫn để tái lập toàn bộ kết quả trong báo cáo:
 
 \begin{enumerate}
-    \item \textbf{Cài đặt môi trường} (khuyến nghị Python 3.10):
+    \item \textbf{Cài đặt môi trường} (khuyến nghị Python 3.12):
 \end{enumerate}
 
 {\small
@@ -112,8 +99,8 @@ python -m venv venv
 venv\Scripts\activate        # Windows
 venv/bin/activate            # Linux/Mac
 
-pip install pandas numpy nltk scikit-learn
-pip install tensorflow matplotlib seaborn streamlit
+pip install -r requirements.txt
+# pandas numpy nltk scikit-learn matplotlib seaborn streamlit
 \end{verbatim}
 }
 
@@ -125,19 +112,20 @@ pip install tensorflow matplotlib seaborn streamlit
 
 {\small
 \begin{verbatim}
-python train_and_evaluate.py   # huan luyen 3 mo hinh truyen thong + LSTM,
+python train_and_evaluate.py   # 3 mo hinh tham chieu + KNN,
                                # danh gia va xuat bieu do vao results/
+python experiments.py          # chay cac kich ban E3--E5 (k, metric, weights)
 streamlit run app.py           # chay giao dien demo
 \end{verbatim}
 }
 
-Kết quả mỗi lần chạy được ghi ra thư mục results/ gồm: bảng số liệu, biểu đồ loss/accuracy, ma trận nhầm lẫn và đường cong ROC dùng cho chương 3.
+Kết quả mỗi lần chạy được ghi ra thư mục results/ gồm: bảng số liệu (ket-qua.csv, ket-qua.json), ma trận nhầm lẫn, đường cong ROC, biểu đồ độ chính xác theo $k$ và kết quả các kịch bản E3--E5 (kich-ban.json) dùng cho chương 3.
 
 \section*{Phụ lục 3. Tài liệu, mã nguồn và liên kết liên quan}
 
 \begin{itemize}
     \item Bộ dữ liệu: ISOT Fake News (Fake and Real News Dataset), tải từ Kaggle: \url{https://www.kaggle.com/datasets/clmentbisaillon/fake-and-real-news-dataset}.
-    \item Mã nguồn thí nghiệm: nhóm bổ sung link GitHub, ví dụ \url{https://github.com/<tai-khoan>/fake-news-detection}.
-    \item Tài liệu tham khảo chính: bài báo ISOT \cite{ahmed2017}, bài báo LSTM \cite{lstm}, bài báo Word2Vec \cite{word2vec} và bài báo CNN cho phân loại câu \cite{kim2014}.
-    \item Sổ ghi chép quá trình thí nghiệm: toàn bộ mã nguồn Python của nhóm (tệp train\_and\_evaluate.py huấn luyện và đánh giá, tệp experiments.py chạy các kịch bản E3--E5, tệp app.py giao diện demo Streamlit) kèm log huấn luyện Keras và các biểu đồ kết quả.
+    \item Mã nguồn thí nghiệm: \url{https://github.com/nemnguye269/MACHINE-LEARNING-NHOM-4}.
+    \item Tài liệu tham khảo chính: bài báo ISOT \cite{ahmed2017}, bài báo gốc của thuật toán KNN \cite{coverhart}, tài liệu scikit-learn \cite{sklearn}; các bài báo LSTM \cite{lstm}, Word2Vec \cite{word2vec} và CNN cho phân loại câu \cite{kim2014} được dẫn trong phần tổng quan nghiên cứu ở chương 1.
+    \item Sổ ghi chép quá trình thí nghiệm: toàn bộ mã nguồn Python của nhóm (tệp train\_and\_evaluate.py huấn luyện và đánh giá, tệp experiments.py chạy các kịch bản E3--E5, tệp app.py giao diện demo Streamlit) kèm kết quả dạng JSON/CSV và các biểu đồ kết quả.
 \end{itemize}

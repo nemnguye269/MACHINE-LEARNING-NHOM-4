@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Phat hien tin tuc gia mao — Bo du lieu ISOT (Kaggle)
-Quy trinh: tai du lieu -> tien xu ly -> vector hoa ->
-huang luyen 3 mo hinh truyen thong + LSTM -> danh gia -> xuat bieu do.
+Phat hien tin tuc gia mao su dung thuat toan KNN — Bo du lieu ISOT (Kaggle)
+Quy trinh: tai du lieu -> tien xu ly -> TF-IDF ->
+  (1) 3 mo hinh tham chieu: Naive Bayes, Logistic Regression, Passive Aggressive
+  (2) mo hinh chinh: KNN (k = 5, khoang cach cosine, trong so distance)
+-> danh gia -> xuat bieu do + luu model cho demo Streamlit.
 
 Cach chay:
     python train_and_evaluate.py
@@ -13,11 +15,12 @@ Yeu cau:
 """
 
 import json
+import pickle
 import re
 import string
+import time
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import nltk
 import matplotlib
@@ -32,28 +35,19 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.linear_model import LogisticRegression, PassiveAggressiveClassifier
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import (accuracy_score, precision_score, recall_score,
                              f1_score, confusion_matrix, roc_curve, auc,
                              classification_report)
-
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dropout, Dense
-from tensorflow.keras.callbacks import EarlyStopping
 
 # =========================
 # 0. Cau hinh
 # =========================
 RANDOM_STATE = 42
-TEST_SIZE = 0.25          # 75% train / 25% test
-VOCAB_SIZE = 10000        # tu dien toi da
-MAX_LEN = 256             # do dai chuoi co dinh
-EMBED_DIM = 64            # kich thuoc vector embedding
-LSTM_UNITS = 64           # so neron LSTM
-DROPOUT = 0.5
-EPOCHS = 10
-BATCH_SIZE = 64
+TEST_SIZE = 0.25            # 75% train / 25% test
+K_NEIGHBORS = 5             # so lang gieng k (mo hinh chinh KNN)
+K_METRIC = "cosine"         # khoang cach cosine — phu hop voi vector TF-IDF
+K_WEIGHTS = "distance"      # lang gieng gan nang trong so hon
 
 DATA_DIR = Path("data")
 OUT_DIR = Path("results")
@@ -85,7 +79,6 @@ def load_data():
 # =========================
 # NLTK tren Windows co dinh duong dan mac dinh C:\nltk_data, D:\nltk_data.
 # Neu o D:\ khong doc duoc se gay loi, nen chi giu thu muc nltk_data cua du an.
-import nltk
 NLTK_DIR = Path(__file__).resolve().parent / "nltk_data"
 NLTK_DIR.mkdir(exist_ok=True)
 nltk.data.path[:] = [str(NLTK_DIR)] + [
@@ -111,120 +104,59 @@ def clean_text(s: str) -> str:
 
 
 # =========================
-# 3. Cac mo hinh truyen thong (TF-IDF)
+# 3. Vector hoa TF-IDF (dung chung cho moi mo hinh)
 # =========================
-def run_traditional_models(X_train, X_test, y_train, y_test):
+def build_tfidf(X_train, X_test):
+    """TF-IDF voi n-gram 1..2, gioi han 50.000 dac trung pho bien nhat."""
     tfidf = TfidfVectorizer(ngram_range=(1, 2), max_features=50000)
     Xtr = tfidf.fit_transform(X_train)
     Xte = tfidf.transform(X_test)
+    print(f"[3] TF-IDF: {Xtr.shape[0]} x {Xtr.shape[1]} dac trung (thua)")
+    return tfidf, Xtr, Xte
 
-    models = {
-        "Naive Bayes": MultinomialNB(),
-        "Logistic Regression": LogisticRegression(max_iter=1000),
-        "Passive Aggressive": PassiveAggressiveClassifier(max_iter=50),
-    }
 
-    for name, model in models.items():
-        print(f"[3] Dang huan luyen: {name} ...")
-        model.fit(Xtr, y_train)
+# =========================
+# 4. Danh gia mot mo hinh
+# =========================
+def evaluate_model(name, model, Xtr, y_train, Xte, y_test, use_proba=False):
+    """Fit + du doan + tinh cac do do; tra ve (y_pred, y_prob)."""
+    t0 = time.time()
+    model.fit(Xtr, y_train)          # voi KNN: chi la "hoc ghi nho" du lieu
+    fit_s = time.time() - t0
+
+    t0 = time.time()
+    if use_proba:
+        # Xac suat lop 1 (Fake) — dung cho ROC; nguong 0.5 ra y_pred
+        y_prob = model.predict_proba(Xte)[:, 1]
+        y_pred = (y_prob >= 0.5).astype(int)
+    else:
+        y_prob = None
         y_pred = model.predict(Xte)
-        results[name] = {
-            "accuracy": accuracy_score(y_test, y_pred),
-            "precision": precision_score(y_test, y_pred),
-            "recall": recall_score(y_test, y_pred),
-            "f1": f1_score(y_test, y_pred),
-        }
-        print(classification_report(y_test, y_pred, target_names=["True", "Fake"]))
+    pred_s = time.time() - t0
 
-
-# =========================
-# 4. Mo hinh LSTM
-# =========================
-def build_lstm_model():
-    model = Sequential([
-        Embedding(input_dim=VOCAB_SIZE, output_dim=EMBED_DIM),
-        LSTM(LSTM_UNITS),
-        Dropout(DROPOUT),
-        Dense(32, activation="relu"),
-        Dense(1, activation="sigmoid"),
-    ])
-    model.compile(optimizer="adam", loss="binary_crossentropy",
-                  metrics=["accuracy"])
-    return model
-
-
-def run_lstm(X_train, X_test, y_train, y_test):
-    print("[4] Dang vector hoa cho LSTM (Tokenizer + Padding) ...")
-    tokenizer = Tokenizer(num_words=VOCAB_SIZE, oov_token="<OOV>")
-    tokenizer.fit_on_texts(X_train)
-
-    Xtr = pad_sequences(tokenizer.texts_to_sequences(X_train), maxlen=MAX_LEN)
-    Xte = pad_sequences(tokenizer.texts_to_sequences(X_test), maxlen=MAX_LEN)
-
-    print("[4] Dang huan luyen mo hinh LSTM ...")
-    model = build_lstm_model()
-    early_stop = EarlyStopping(monitor="val_loss", patience=2,
-                               restore_best_weights=True)
-    history = model.fit(
-        Xtr, np.array(y_train),
-        validation_data=(Xte, np.array(y_test)),
-        epochs=EPOCHS, batch_size=BATCH_SIZE,
-        callbacks=[early_stop], verbose=2,
-    )
-
-    # Xac suat du doan (dung cho ROC + ma tran nham lan)
-    y_prob = model.predict(Xte).ravel()
-    y_pred = (y_prob >= 0.5).astype(int)
-
-    results["LSTM"] = {
+    results[name] = {
         "accuracy": accuracy_score(y_test, y_pred),
         "precision": precision_score(y_test, y_pred),
         "recall": recall_score(y_test, y_pred),
         "f1": f1_score(y_test, y_pred),
+        "fit_time_s": round(fit_s, 2),
+        "predict_time_s": round(pred_s, 2),
     }
+    print(f"    Thoi gian: fit {fit_s:.2f}s | du doan {pred_s:.2f}s")
     print(classification_report(y_test, y_pred, target_names=["True", "Fake"]))
-
-    # --- Luu model + tokenizer cho app.py ---
-    model.save("lstm_fake_news.keras")
-    import pickle
-    with open("tokenizer.pkl", "wb") as f:
-        pickle.dump(tokenizer, f)
-
-    # --- Bieu do loss / accuracy ---
-    plot_history(history, OUT_DIR / "loss-curve.png")
-
-    # --- Ma tran nham lan ---
-    cm = confusion_matrix(y_test, y_pred)
-    plot_confusion(cm, OUT_DIR / "confusion-matrix.png")
-
-    # --- Duong cong ROC ---
-    plot_roc(y_test, y_prob, OUT_DIR / "roc-curve.png")
-    return history
+    return y_pred, y_prob
 
 
-def plot_history(history, path):
-    fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-    axes[0].plot(history.history["loss"], label="train loss")
-    axes[0].plot(history.history["val_loss"], label="test loss")
-    axes[0].set_title("Loss theo epochs"); axes[0].set_xlabel("Epoch")
-    axes[0].legend()
-    axes[1].plot(history.history["accuracy"], label="train acc")
-    axes[1].plot(history.history["val_accuracy"], label="test acc")
-    axes[1].set_title("Accuracy theo epochs"); axes[1].set_xlabel("Epoch")
-    axes[1].legend()
-    fig.tight_layout()
-    fig.savefig(path, dpi=150)
-    plt.close(fig)
-    print(f"    Da luu {path}")
-
-
+# =========================
+# 5. Cac do do bieu do
+# =========================
 def plot_confusion(cm, path):
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
                 xticklabels=["True", "Fake"],
                 yticklabels=["True", "Fake"])
     plt.xlabel("Du doan"); plt.ylabel("Thuc te")
-    plt.title("Confusion Matrix - LSTM")
+    plt.title("Confusion Matrix - KNN")
     plt.tight_layout()
     plt.savefig(path, dpi=150)
     plt.close()
@@ -235,10 +167,10 @@ def plot_roc(y_test, y_prob, path):
     fpr, tpr, _ = roc_curve(y_test, y_prob)
     roc_auc = auc(fpr, tpr)
     plt.figure(figsize=(5, 4))
-    plt.plot(fpr, tpr, label=f"LSTM (AUC = {roc_auc:.4f})")
+    plt.plot(fpr, tpr, label=f"KNN (AUC = {roc_auc:.4f})")
     plt.plot([0, 1], [0, 1], "--", color="gray", label="Ngau nhien")
     plt.xlabel("False Positive Rate"); plt.ylabel("True Positive Rate")
-    plt.title("ROC Curve - LSTM")
+    plt.title("ROC Curve - KNN")
     plt.legend()
     plt.tight_layout()
     plt.savefig(path, dpi=150)
@@ -247,7 +179,7 @@ def plot_roc(y_test, y_prob, path):
 
 
 # =========================
-# 5. Tong hop ket qua
+# 6. Tong hop ket qua
 # =========================
 def summarize():
     print("\n========= TONG HOP KET QUA (tap kiem tra 25%) =========")
@@ -272,6 +204,36 @@ if __name__ == "__main__":
     X_train = X_train.apply(clean_text)
     X_test = X_test.apply(clean_text)
 
-    run_traditional_models(X_train, X_test, y_train, y_test)
-    run_lstm(X_train, X_test, y_train, y_test)
+    tfidf, Xtr, Xte = build_tfidf(X_train, X_test)
+
+    # --- (1) Ba mo hinh tham chieu ---
+    reference_models = {
+        "Naive Bayes": MultinomialNB(),
+        "Logistic Regression": LogisticRegression(max_iter=1000),
+        "Passive Aggressive": PassiveAggressiveClassifier(max_iter=50),
+    }
+    for name, model in reference_models.items():
+        print(f"[4] Mo hinh tham chieu: {name} ...")
+        evaluate_model(name, model, Xtr, y_train, Xte, y_test)
+
+    # --- (2) Mo hinh chinh: KNN ---
+    print(f"[4] Mo hinh chinh: KNN (k={K_NEIGHBORS}, metric={K_METRIC}, "
+          f"weights={K_WEIGHTS}) ...")
+    knn = KNeighborsClassifier(n_neighbors=K_NEIGHBORS, metric=K_METRIC,
+                               weights=K_WEIGHTS, algorithm="brute")
+    y_pred_knn, y_prob_knn = evaluate_model(
+        "KNN", knn, Xtr, y_train, Xte, y_test, use_proba=True)
+
+    # --- Luu model + vectorizer cho demo Streamlit (app.py) ---
+    with open("knn_model.pkl", "wb") as f:
+        pickle.dump(knn, f)
+    with open("tfidf_vectorizer.pkl", "wb") as f:
+        pickle.dump(tfidf, f)
+    print("    Da luu knn_model.pkl va tfidf_vectorizer.pkl (cho app.py)")
+
+    # --- Bieu do danh gia cua KNN ---
+    plot_confusion(confusion_matrix(y_test, y_pred_knn),
+                   OUT_DIR / "confusion-matrix.png")
+    plot_roc(y_test, y_prob_knn, OUT_DIR / "roc-curve.png")
+
     summarize()

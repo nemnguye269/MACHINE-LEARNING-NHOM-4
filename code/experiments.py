@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Chay cac kich ban thi nghiem E3-E5 voi mo hinh LSTM (dong bo voi bao cao):
-  E3: tu dien 20.000 tu
-  E4: do dai chuoi 128 / 400
-  E5: bo Dropout + Early Stopping (chay du 10 epochs)
-Ket qua: results/kich-ban.json
+Chay cac kich ban thi nghiem voi thuat toan KNN (dong bo voi bao cao):
+  E3: so lang gieng k = 1 / 3 / 5 / 7 / 9 / 11
+  E4: do khoang cach: cosine / euclidean (k = 5)
+  E5: trong so lang gieng: distance / uniform (k = 5, cosine)
+Ket qua: results/kich-ban.json + results/do-chinh-xac-theo-k.png
 """
 
 import json
@@ -14,18 +14,17 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 
 from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
-
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Embedding, LSTM, Dropout, Dense
-from tensorflow.keras.callbacks import EarlyStopping
 
 RANDOM_STATE = 42
 OUT = Path("results")
@@ -63,51 +62,64 @@ def load_split():
     data = data.dropna().drop_duplicates(subset="text")
     X_train, X_test, y_train, y_test = train_test_split(
         data["text"], data["label"], test_size=0.25, random_state=RANDOM_STATE)
-    return (X_train.apply(clean_text), X_test.apply(clean_text),
-            np.array(y_train), np.array(y_test))
+    X_train = X_train.apply(clean_text)
+    X_test = X_test.apply(clean_text)
+    tfidf = TfidfVectorizer(ngram_range=(1, 2), max_features=50000)
+    Xtr = tfidf.fit_transform(X_train)
+    Xte = tfidf.transform(X_test)
+    return Xtr, Xte, np.array(y_train), np.array(y_test)
 
 
-def run_lstm(X_train, X_test, y_train, y_test, vocab=10000, maxlen=256,
-             use_dropout=True, use_earlystop=True, epochs=10, name="E"):
-    tok = Tokenizer(num_words=vocab, oov_token="<OOV>")
-    tok.fit_on_texts(X_train)
-    Xtr = pad_sequences(tok.texts_to_sequences(X_train), maxlen=maxlen)
-    Xte = pad_sequences(tok.texts_to_sequences(X_test), maxlen=maxlen)
-
-    layers = [Embedding(vocab, 64), LSTM(64)]
-    if use_dropout:
-        layers.append(Dropout(0.5))
-    layers += [Dense(32, activation="relu"), Dense(1, activation="sigmoid")]
-    model = Sequential(layers)
-    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
-
-    callbacks = ([EarlyStopping(monitor="val_loss", patience=2,
-                                restore_best_weights=True)]
-                 if use_earlystop else [])
-    hist = model.fit(Xtr, y_train, validation_data=(Xte, y_test),
-                     epochs=epochs, batch_size=64, callbacks=callbacks, verbose=2)
-    prob = model.predict(Xte, verbose=0).ravel()
+def run_knn(Xtr, Xte, y_train, y_test, k=5, metric="cosine", weights="distance"):
+    knn = KNeighborsClassifier(n_neighbors=k, metric=metric,
+                               weights=weights, algorithm="brute")
+    knn.fit(Xtr, y_train)
+    prob = knn.predict_proba(Xte)[:, 1]
     pred = (prob >= 0.5).astype(int)
     acc = accuracy_score(y_test, pred)
-    n_epochs = len(hist.history["loss"])
-    print(f"[{name}] vocab={vocab} maxlen={maxlen} dropout={use_dropout} "
-          f"earlystop={use_earlystop} -> acc={acc:.4f} ({n_epochs} epochs)")
-    return {"accuracy": round(acc, 4), "epochs": n_epochs}
+    print(f"[KNN] k={k} metric={metric} weights={weights} -> acc={acc:.4f}")
+    return round(acc, 4)
 
 
 if __name__ == "__main__":
-    X_train, X_test, y_train, y_test = load_split()
-    print(f"Train={len(X_train)}, Test={len(X_test)}")
+    Xtr, Xte, y_train, y_test = load_split()
+    print(f"Train={Xtr.shape[0]}, Test={Xte.shape[0]}")
+
     results = {}
-    results["E3_vocab20000"] = run_lstm(X_train, X_test, y_train, y_test,
-                                        vocab=20000, name="E3")
-    results["E4_maxlen128"] = run_lstm(X_train, X_test, y_train, y_test,
-                                       maxlen=128, name="E4a")
-    results["E4_maxlen400"] = run_lstm(X_train, X_test, y_train, y_test,
-                                       maxlen=400, name="E4b")
-    results["E5_noDropout_noEarlyStop"] = run_lstm(
-        X_train, X_test, y_train, y_test,
-        use_dropout=False, use_earlystop=False, name="E5")
+
+    # --- E3: do chinh xac theo k (k le tu 1 den 11) ---
+    k_list = [1, 3, 5, 7, 9, 11]
+    k_acc = {}
+    for k in k_list:
+        k_acc[k] = run_knn(Xtr, Xte, y_train, y_test, k=k)
+    results["E3_k3"] = k_acc[3]
+    results["E3_k5_chuan"] = k_acc[5]
+    results["E3_k7"] = k_acc[7]
+    results["E3_k_curve"] = {str(k): v for k, v in k_acc.items()}
+
+    # --- E4: do khoang cach ---
+    results["E4_euclidean"] = run_knn(Xtr, Xte, y_train, y_test,
+                                      k=5, metric="euclidean")
+
+    # --- E5: trong so lang gieng ---
+    results["E5_uniform"] = run_knn(Xtr, Xte, y_train, y_test,
+                                    k=5, weights="uniform")
+
     with open(OUT / "kich-ban.json", "w") as f:
         json.dump(results, f, indent=2)
     print("Da luu results/kich-ban.json")
+
+    # --- Bieu do do chinh xac theo k ---
+    fig, ax = plt.subplots(figsize=(7, 4))
+    ks = sorted(int(k) for k in results["E3_k_curve"])
+    accs = [results["E3_k_curve"][str(k)] * 100 for k in ks]
+    ax.plot(ks, accs, "o-", color="tab:blue")
+    best_k = max(k_acc, key=k_acc.get)
+    ax.axvline(best_k, color="tab:red", linestyle="--",
+               label=f"k tot nhat = {best_k}")
+    ax.set_xlabel("So lang gieng k"); ax.set_ylabel("Do chinh xac (%)")
+    ax.set_title("Do chinh xac cua KNN theo so lang gieng k")
+    ax.set_xticks(ks); ax.legend(); ax.grid(alpha=0.3)
+    fig.tight_layout()
+    fig.savefig(OUT / "do-chinh-xac-theo-k.png", dpi=150)
+    print("Da luu results/do-chinh-xac-theo-k.png")

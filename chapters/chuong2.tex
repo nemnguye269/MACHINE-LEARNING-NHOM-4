@@ -1,8 +1,8 @@
 \chapter[CƠ SỞ LÝ THUYẾT]{Cơ sở lý thuyết}
 
-Chương này trình bày các khái niệm và phương pháp nền tảng phục vụ xây dựng mô hình ở chương sau, theo trình tự: từ khái quát học máy, xử lý ngôn ngữ tự nhiên, các kỹ thuật trích xuất đặc trưng văn bản, các mô hình học máy truyền thống, tới các mạng nơ-ron học sâu (RNN, LSTM, CNN) và các độ đo đánh giá mô hình.
+Chương này trình bày các khái niệm và phương pháp nền tảng phục vụ xây dựng mô hình ở chương sau, theo trình tự: từ khái quát học máy, xử lý ngôn ngữ tự nhiên, các kỹ thuật trích xuất đặc trưng văn bản, các mô hình học máy truyền thống, thuật toán láng giềng gần nhất (KNN) --- thuật toán chính của đề tài --- và các độ đo đánh giá mô hình.
 
-\section{Học máy và học sâu}
+\section{Học máy}
 
 \subsection{Khái niệm học máy}
 
@@ -16,9 +16,16 @@ Các bài toán học máy được chia thành ba nhóm chính:
     \item \textbf{Học tăng cường} (reinforcement learning): tác nhân học hành vi qua tương tác với môi trường bằng phần thưởng/trị phạt.
 \end{itemize}
 
-\subsection{Học sâu}
+\subsection{Học có giám sát và bài toán phân loại}
 
-\textbf{Học sâu} (Deep Learning --- DL) là nhánh của học máy sử dụng \textbf{mạng nơ-ron nhiều lớp} để tự học các biểu diễn dữ liệu ở nhiều mức trừu tượng khác nhau. Ưu điểm nổi bật của học sâu là khả năng \textbf{tự học đặc trưng} (representation learning): thay vì con người phải thiết kế đặc trưng thủ công, mạng nơ-ron học trực tiếp từ dữ liệu thô (ảnh, âm thanh, văn bản). Với dữ liệu văn bản, học sâu đặc biệt hiệu quả khi dữ liệu lớn và các quy luật cần học mang tính ngữ cảnh, khó biểu diễn bằng bộ đặc trưng thủ công.
+Trong học có giám sát, thuật toán nhận vào một tập huấn luyện gồm các cặp (đặc trưng, nhãn) $(x_i, y_i)$ và xây dựng một hàm dự đoán $f$ sao cho $f(x) \approx y$ trên dữ liệu mới. Khi nhãn là biến rời rạc (ví dụ ``tin thật''/``tin giả''), bài toán gọi là \textbf{phân loại}; khi nhãn là biến liên tục, bài toán gọi là \textbf{hồi quy}.
+
+Các thuật toán phân loại có thể chia theo cách ``lưu trữ tri thức'' thành hai nhóm đáng chú ý:
+
+\begin{itemize}
+    \item \textbf{Học nhiệt tình} (eager learning): trong giai đoạn huấn luyện, thuật toán tổng kết toàn bộ dữ liệu thành một mô hình tham số compact --- ví dụ bộ trọng số của mô hình tuyến tính --- rồi loại bỏ dữ liệu gốc; khi dự đoán chỉ cần mô hình này.
+    \item \textbf{Học dựa trên mẫu} (instance-based learning): thuật toán không xây dựng mô hình tổng quát mà \textit{lưu giữ nguyên} các mẫu huấn luyện; khi cần dự đoán một mẫu mới, thuật toán so sánh trực tiếp mẫu đó với các mẫu đã lưu. Thuật toán láng giềng gần nhất (KNN) là đại diện tiêu biểu của nhóm này, và được gọi là thuật toán \textbf{lười} (lazy learning) vì công sức tính toán bị dồn sang giai đoạn dự đoán thay vì giai đoạn huấn luyện.
+\end{itemize}
 
 \subsection{Quy trình xây dựng một bài toán học máy}
 
@@ -29,9 +36,9 @@ Quy trình chuẩn cho một bài toán học máy có giám sát được thự
     \item \textbf{Thu thập dữ liệu}: tìm bộ dữ liệu gán nhãn chất lượng, đủ lớn và có nguồn gốc rõ ràng (bộ ISOT \cite{dataset}).
     \item \textbf{Khảo sát dữ liệu (EDA)}: thống kê số lượng mẫu, phân bố nhãn, độ dài văn bản, kiểm tra giá trị thiếu, trùng lặp.
     \item \textbf{Tiền xử lý}: làm sạch văn bản, chuẩn hóa, loại bỏ nhiễu.
-    \item \textbf{Trích xuất đặc trưng / vector hóa}: chuyển văn bản thành dạng số mà thuật toán học được (TF-IDF hoặc chuỗi chỉ số từ + Embedding).
+    \item \textbf{Trích xuất đặc trưng / vector hóa}: chuyển văn bản thành dạng số mà thuật toán học được (TF-IDF).
     \item \textbf{Chia tập dữ liệu}: chia ngẫu nhiên thành tập huấn luyện (train) để học tham số và tập kiểm tra (test) để đánh giá khách quan. Trong đề tài dùng tỷ lệ 75\%/25\%. Với các bài toán lớn, thường chia thêm tập phát triển (validation) để tinh chỉnh siêu tham số hoặc dùng \textbf{kiểm chứng chéo k-lớp} (k-fold cross-validation): chia dữ liệu thành $k$ phần, luân phiên lấy mỗi phần làm tập kiểm tra và lấy trung bình kết quả.
-    \item \textbf{Huấn luyện}: chạy thuật toán tối ưu để tìm tham số tốt nhất trên tập huấn luyện.
+    \item \textbf{Huấn luyện}: chạy thuật toán tối ưu để tìm tham số tốt nhất trên tập huấn luyện. Với KNN, bước này chỉ là ghi nhớ tập dữ liệu (chi phí gần như bằng 0), mọi tính toán dồn sang bước dự đoán.
     \item \textbf{Đánh giá và phân tích lỗi}: đo các độ đo đánh giá trên tập kiểm tra chưa từng thấy, phân tích các mẫu bị phân loại sai.
     \item \textbf{Triển khai}: đóng gói mô hình vào ứng dụng thực tế.
 \end{enumerate}
@@ -58,6 +65,7 @@ Khác với dữ liệu bảng truyền thống, văn bản có đặc điểm: 
 \textbf{Mô hình túi từ} (Bag of Words) biểu diễn văn bản bằng vector tần suất xuất hiện của các từ trong từ điển, \textit{bỏ qua hoàn toàn thứ tự} của chúng. Ví dụ với từ điển 4 từ \{``tin'', ``giả'', ``lan'', ``truyền''\}, câu ``tin giả lan truyền'' được biểu diễn [1, 1, 1, 1]. Mô hình đơn giản, dễ triển khai nhưng: từ điển khổng lồ gây vector thưa (sparse) kích thước lớn; mất hoàn toàn thông tin thứ tự; các từ hiếm gây nhiễu.
 
 \subsection{TF-IDF}
+\label{sec:tfidf}
 
 \textbf{TF-IDF} (Term Frequency -- Inverse Document Frequency) là kỹ thuật đánh trọng số của từ trong văn bản, được tính theo công thức:
 
@@ -77,26 +85,18 @@ trong đó $N$ là tổng số văn bản trong kho dữ liệu và $n_t$ là s�
 
 \textbf{Ví dụ minh họa.} Giả sử kho dữ liệu có $N = 1.000$ bài tin tức; từ ``bầu'' xuất hiện 900 bài (IDF $\approx \log(1000/901) \approx 0{,}05$ --- gần như vô nghĩa) trong khi từ ``đàn áp'' chỉ xuất hiện 50 bài (IDF $\approx \log(1000/51) \approx 1{,}3$ --- mang tính phân biệt cao). Với cùng tần suất xuất hiện trong một bài, trọng số TF-IDF của ``đàn áp'' sẽ gấp khoảng 25 lần ``bầu''.
 
-TF-IDF kết hợp với phân tích n-gram và mô hình học máy truyền thống (Naive Bayes, Logistic Regression, Passive Aggressive) là phương pháp kinh điển cho phân loại văn bản và vẫn là baseline mạnh tới ngày nay.
+\textbf{Chuẩn hóa L2 của vector TF-IDF.} Sau khi tính trọng số, mỗi vector văn bản thường được \textit{chuẩn hóa L2}: chia toàn bộ thành phần cho độ dài Euclidean của vector, khi đó $\lVert x \rVert = 1$. Chuẩn hóa này đưa mọi bài viết về cùng một ``thang đo'' bất kể bài dài hay ngắn, tránh việc bài dài có tổng trọng số lớn hơn một cách ``không công bằng''. Đối với thuật toán KNN, chuẩn hóa L2 còn có ý nghĩa đặc biệt: với hai vector chuẩn hóa $x, y$, khoảng cách Euclidean và khoảng cách cosine liên hệ với nhau qua đẳng thức
+\begin{equation}
+    \lVert x - y \rVert^2 = \lVert x \rVert^2 + \lVert y \rVert^2 - 2\,x^{\top}y = 2\left(1 - \cos(x, y)\right),
+    \label{eq:l2-cos}
+\end{equation}
+tức hai phép đo chỉ khác nhau một biến đổi đơn điệu trên cùng dữ liệu --- đây là lý do kinh điển khiến cosine là phép đo được ưa dùng cho văn bản (phân tích chi tiết ở mục \ref{sec:knn-khoang-cach}).
 
-\subsection{Vector biểu diễn từ (Word Embedding)}
-
-Mô hình túi từ và TF-IDF coi các từ độc lập với nhau, không thể hiện quan hệ ngữ nghĩa: ``vua'' và ``vương quốc'' là hai chiều hoàn toàn tách rời. \textbf{Word embedding} khắc phục hạn chế này bằng cách biểu diễn mỗi từ dưới dạng một \textbf{vector dày đặc} (dense vector) trong không gian nhiều chiều (thường 50--300 chiều), trong đó các từ có nghĩa gần nhau có vector gần nhau.
-
-Ý tưởng nền tảng được phát biểu bởi quan sát nổi tiếng của Firth: ``\textit{Bạn sẽ biết một từ qua những từ đi cùng nó}'' (You shall know a word by the company it keeps). Phương pháp tiêu biểu là \textbf{Word2Vec} của Mikolov và cộng sự \cite{word2vec}, huấn luyện một mạng nơ-ron nhỏ trên kho văn bản lớn theo hai kiến trúc:
-
-\begin{itemize}
-    \item \textbf{CBOW} (Continuous Bag of Words): dự đoán từ đích từ ngữ cảnh xung quanh --- với câu ``vua \_\_\_ trị vì đất nước'', mô hình học dự đoán từ thiếu là ``đại''.
-    \item \textbf{Skip-gram}: ngược lại, dự đoán ngữ cảnh từ từ đích, hiệu quả với từ hiếm.
-\end{itemize}
-
-Sau huấn luyện, ma trận trọng số của lớp ẩn chính là các vector từ, trong đó các từ thường đi cùng nhau trong các ngữ cảnh giống nhau sẽ có vector gần nhau. Kết quả học được vượt xa mong đợi của một mô hình đơn giản: các quan hệ ngữ nghĩa, từ loại, thậm chí các phép tính vector (ví dụ $v_{\text{king}} - v_{\text{man}} + v_{\text{woman}} \approx v_{\text{queen}}$) được phản ánh trong không gian vector.
-
-Trong các mạng nơ-ron học sâu xử lý văn bản, lớp \textbf{Embedding} thực hiện vai trò tương tự: cho mỗi chỉ số từ, trả về vector dày đặc tương ứng. Vector này có thể được học trực tiếp cùng với toàn bộ mạng (cách làm của đề tài) hoặc khởi tạo sẵn từ Word2Vec/GloVe đã huấn luyện trước trên kho văn bản lớn.
+TF-IDF kết hợp với phân tích n-gram và mô hình học máy truyền thống (Naive Bayes, Logistic Regression, Passive Aggressive, KNN) là phương pháp kinh điển cho phân loại văn bản và vẫn là baseline mạnh tới ngày nay.
 
 \section{Một số mô hình học máy truyền thống}
 
-Các mô hình học máy truyền thống kết hợp đặc trưng TF-IDF là cơ sở so sánh quan trọng trong đề tài. Dưới đây là nguyên lý hoạt động của ba mô hình tiêu biểu.
+Các mô hình học máy truyền thống kết hợp đặc trưng TF-IDF là cơ sở so sánh quan trọng trong đề tài. Dưới đây là nguyên lý hoạt động của ba mô hình tiêu biểu được dùng làm tham chiếu.
 
 \subsection{Naive Bayes}
 
@@ -131,140 +131,129 @@ với $w$ là vector trọng số của các đặc trưng TF-IDF và $b$ là th
 
 trong đó $\lambda_t$ được chọn là mức cập nhật tối thiểu đủ để sửa mẫu hiện tại. Thuật toán phù hợp với luồng tin tức liên tục thay đổi, và là mô hình tham chiếu được sử dụng trong nghiên cứu gốc của bộ dữ liệu ISOT \cite{ahmed2017}.
 
-\section{Mạng nơ-ron hồi tiếp (RNN)}
+\section{Thuật toán láng giềng gần nhất (KNN)}
 
-\textbf{Mạng nơ-ron hồi tiếp} (Recurrent Neural Network --- RNN) là mạng nơ-ron chuyên xử lý dữ liệu tuần tự như văn bản, âm thanh, chuỗi thời gian. Khác với mạng truyền thẳng (feed-forward) coi mỗi mẫu là một vector cố định, RNN có \textbf{trạng thái ẩn} $h_t$ được cập nhật theo thời bước, cho phép ghi nhận thông tin từ các phần tử trước đó trong chuỗi:
+\subsection{Nguyên lý hoạt động}
 
-\begin{equation}
-    h_t = \tanh(W_{hh}\, h_{t-1} + W_{xh}\, x_t + b_h)
-    \label{eq:rnn}
-\end{equation}
+\textbf{Thuật toán láng giềng gần nhất} (K-Nearest Neighbors --- KNN) do Cover và Hart đề xuất \cite{coverhart} là một trong những thuật toán phân loại đơn giản và trực quan nhất của học máy, dựa trên nguyên lý ``\textit{hãy cho tôi biết bạn sống cùng ai, tôi sẽ nói bạn là ai}'': một mẫu mới được gán nhãn theo \textbf{số đông} trong $k$ mẫu đã biết \textit{gần nhất} (tương đồng nhất) với nó trong không gian đặc trưng.
 
-với $x_t$ là đầu vào (vector của từ thứ $t$) tại thời bước $t$, $W_{hh}$, $W_{xh}$ là các ma trận trọng số dùng chung cho mọi thời bước và $b_h$ là vector thiên vị. Cùng một bộ trọng số được áp dụng lặp lại trên toàn chuỗi --- tính chất ``hồi tiếp'' của mạng.
+Khác với các mô hình ở mục trước, KNN là thuật toán \textbf{lười} (lazy learning): giai đoạn ``huấn luyện'' chỉ gồm việc lưu trữ toàn bộ tập huấn luyện; toàn bộ công sức tính toán dồn vào lúc dự đoán. Quy trình dự đoán một bài tin tức mới $x$ gồm các bước:
 
-Tuy nhiên, khi huấn luyện bằng lan truyền ngược qua thời gian (BPTT), RNN cơ bản gặp vấn đề \textbf{tiêu biến gradient} (vanishing gradient): gradient lan truyền ngược qua nhiều thời bước bị nhân liên tục với đạo hàm của tanh (có giá trị tuyệt đối nhỏ hơn 1), khiến gradient dần dần triệt tiêu về 0 với các phụ thuộc xa. Kết quả: mạng chỉ học được các phụ thuộc ngắn gần, không nắm được các cụm thông tin quan trọng xuất hiện ở xa nhau trong bài viết --- trong khi với tin tức dài, dấu hiệu nhận biết tin giả ở mở đầu có thể cần được đối chiếu với nội dung ở đoạn cuối. Vấn đề nổ gradient (exploding gradient) đối xứng cũng có thể xảy ra và được xử lý bằng cắt gradient (gradient clipping).
-
-\section{Mạng nơ-ron LSTM}
-
-\subsection{Cấu trúc ô LSTM}
-
-\textbf{LSTM} (Long Short-Term Memory) do Hochreiter và Schmidhuber đề xuất \cite{lstm} giải quyết vấn đề tiêu biến gradient bằng cách bổ sung \textbf{trạng thái tế bào} (cell state) $C_t$ --- một ``băng ghi'' chạy xuyên suốt chuỗi với các phép cộng tuyến tính giúp gradient bảo toàn tốt --- cùng với ba cổng (gate) điều khiển dòng thông tin:
-
-\begin{itemize}
-    \item \textbf{Cổng quên (forget gate)} quyết định lượng thông tin cũ bị loại khỏi trạng thái tế bào:
+\begin{enumerate}
+    \item Tính khoảng cách từ $x$ tới \textbf{tất cả} các mẫu trong tập huấn luyện.
+    \item Chọn ra $k$ mẫu có khoảng cách nhỏ nhất --- gọi là $k$ \textbf{láng giềng gần nhất}, ký hiệu tập $N_k(x)$.
+    \item Gán nhãn theo \textbf{bỏ phiếu đa số} (hoặc bỏ phiếu có trọng số, xem mục \ref{sec:knn-trong-so}):
     \begin{equation}
-        f_t = \sigma(W_f\, [h_{t-1}, x_t] + b_f)
+        \hat{y} = \arg\max_{c \in \{0, 1\}} \sum_{i \in N_k(x)} w_i \cdot \mathbb{1}\left[y_i = c\right],
+        \label{eq:knn-vote}
     \end{equation}
-    \item \textbf{Cổng vào (input gate)} quyết định thông tin mới nào được ghi vào trạng thái tế bào:
-    \begin{equation}
-        i_t = \sigma(W_i\, [h_{t-1}, x_t] + b_i), \qquad
-        \tilde{C}_t = \tanh(W_C\, [h_{t-1}, x_t] + b_C)
-    \end{equation}
-    \item \textbf{Cổng ra (output gate)} quyết định phần trạng thái tế bào được xuất ra trạng thái ẩn:
-    \begin{equation}
-        o_t = \sigma(W_o\, [h_{t-1}, x_t] + b_o), \qquad
-        h_t = o_t \odot \tanh(C_t)
-    \end{equation}
-\end{itemize}
+    trong đó $\mathbb{1}[\cdot]$ là hàm chỉ báo (bằng 1 khi điều kiện đúng) và $w_i$ là trọng số của láng giềng $i$.
+\end{enumerate}
 
-Trạng thái tế bào được cập nhật như sau:
-
-\begin{equation}
-    C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t
-    \label{eq:lstm-cell}
-\end{equation}
-
-trong đó $\sigma$ là hàm sigmoid (giá trị trong $[0,1]$, đóng vai trò ``van mở/đóng''), $\odot$ là tích từng phần tử (Hadamard). Cơ chế cổng cho phép ô LSTM \textit{chủ động giữ} thông tin quan trọng qua hàng trăm thời bước (khi cổng quên mở gần 1) hoặc \textit{quên sạch} thông tin không cần thiết (khi cổng quên đóng về 0) --- điều mà RNN cơ bản không kiểm soát được.
-
-\subsection{Sơ đồ hoạt động của ô LSTM}
+Sơ đồ \ref{sodo:knn-nguyen-ly} minh họa nguyên lý trên một ví dụ phẳng hai chiều: bài viết cần dự đoán (dấu ``?'') nằm gần 4 bài tin giả và 1 bài tin thật, nên được dự đoán là tin giả.
 
 \begin{sodo}[H]
     \centering
     \begin{tikzpicture}[>=stealth, font=\small]
-        \node[draw, text width=8cm, align=center] (input) at (0,0)
-            {Đầu vào: $x_t$, $h_{t-1}$, $C_{t-1}$};
-        \node[draw, text width=10cm, align=center] (cell) at (0,-1.6)
-            {Ô LSTM\\[2pt]
-             Cổng quên: $f_t = \sigma(W_f [h_{t-1}, x_t] + b_f)$ \quad
-             Cổng vào: $i_t$, $\tilde{C}_t$\\[2pt]
-             Cổng ra: $o_t$ \quad
-             Cập nhật: $C_t = f_t \odot C_{t-1} + i_t \odot \tilde{C}_t$};
-        \node[draw, text width=8cm, align=center] (output) at (0,-3.5)
-            {Đầu ra: $h_t = o_t \odot \tanh(C_t)$, \; $C_t$};
-        \draw[->, thick] (input) -- (cell);
-        \draw[->, thick] (cell) -- (output);
-        % Vong lap trang thai
-        \draw[->, thick, dashed] (output.east) -- ++(1.2,0)
-            node[midway, right=0pt] {} |- (input.east)
-            node[pos=0.25, right] {\footnotesize $h_t, C_t$};
+        % Cac diem tin that (xanh duong)
+        \foreach \x/\y in {1/4.2, 2/3.4, 1.6/5.2, 3/5, 2.4/4.6, 0.8/5.6, 1/6.2, 2.2/6} {
+            \draw[fill=blue!35] (\x,\y) circle (0.15);
+        }
+        % Cac diem tin gia (do)
+        \foreach \x/\y in {6.6/2.6, 6.4/2, 6.8/3.6, 6.2/5, 5/5.4} {
+            \draw[fill=red!35] (\x,\y) circle (0.15);
+        }
+        % 5 lang gieng gan nhat cua diem can du doan
+        \coordinate (n1) at (4.4,3);
+        \coordinate (n2) at (5,2.2);
+        \coordinate (n3) at (5.4,3.8);
+        \coordinate (n4) at (5.8,4.6);
+        \coordinate (n5) at (3.4,4);
+        \foreach \p in {n1,n2,n3,n4} {\draw[fill=red!35] (\p) circle (0.15);}
+        \draw[fill=blue!35] (n5) circle (0.15);
+        % Diem can du doan
+        \node[draw, thick, fill=yellow!60, circle, minimum size=0.55cm] (q) at (4.5,3.3) {\textbf{?}};
+        % Vong tron khoang cach k lang gieng
+        \draw[dashed, thick] (q) circle (1.9);
+        % Mui ten tu diem can du doan toi 5 lang gieng
+        \foreach \p in {n1,n2,n3,n4,n5} {\draw[->, thick] (q) -- (\p);}
+        % Chu thich
+        \draw[fill=blue!35] (-1.4,0.3) circle (0.13);
+        \node[anchor=west, font=\footnotesize] at (-1.2,0.3) {Tin thật (đã gán nhãn)};
+        \draw[fill=red!35] (1.6,0.3) circle (0.13);
+        \node[anchor=west, font=\footnotesize] at (1.8,0.3) {Tin giả (đã gán nhãn)};
+        \node[draw, thick, fill=yellow!60, circle, minimum size=0.42cm, inner sep=0pt] at (4.3,0.3) {\footnotesize\textbf{?}};
+        \node[anchor=west, font=\footnotesize] at (4.6,0.3) {Bài viết cần dự đoán};
     \end{tikzpicture}
-    \SodoCaption{Quy trình cập nhật thông tin trong ô LSTM theo thời bước}{Nhóm tự xây dựng theo \cite{lstm}}
-    \label{sodo:ong-lstm}
+    \SodoCaption{Nguyên lý KNN: dựa trên 5 láng giềng gần nhất (4 tin giả, 1 tin thật) bài viết được dự đoán là tin giả}{Nhóm tự xây dựng theo \cite{coverhart}}
+    \label{sodo:knn-nguyen-ly}
 \end{sodo}
 
-Cấu trúc này cho phép thông tin chảy qua chuỗi dài với gradient được bảo toàn tốt, nhờ đó LSTM học được các đặc trưng dài hạn của văn bản --- rất phù hợp cho bài toán phân loại tin giả, khi các dấu hiệu nhận biết (văn phong giật gân, từ ngữ cường điệu, lỗi logic) có thể rải rác khắp bài viết.
+\subsection{Các phép đo khoảng cách}
+\label{sec:knn-khoang-cach}
 
-\subsection{Bi-LSTM}
-
-\textbf{Bi-LSTM} (Bidirectional LSTM) là biến thể chạy \textbf{hai LSTM song song}: một đọc chuỗi xuôi (trái sang phải), một đọc ngược (phải sang trái); trạng thái hai chiều được ghép lại để đưa vào các lớp sau. Ưu điểm: mỗi từ được ``nhìn'' cả ngữ cảnh trước lẫn sau, phù hợp các tác vụ mà ngữ cảnh sau của từ cũng quan trọng. Với bài toán phân loại cả bài tin, Bi-LSTM có thể cải thiện nhẹ chất lượng, đổi lại gấp đôi thời gian huấn luyện. Đề tài sử dụng LSTM một chiều làm mô hình cơ sở và Bi-LSTM là hướng mở rộng.
-
-\section{Mạng nơ-ron tích chập (CNN) cho văn bản}
-
-\textbf{CNN} (Convolutional Neural Network) vốn phổ biến trong thị giác máy tính, được Kim \cite{kim2014} áp dụng thành công cho phân loại câu. Cấu trúc điển hình gồm:
+Kết quả của KNN phụ thuộc trực tiếp vào cách đo \textbf{độ tương đồng} giữa hai mẫu. Ba phép đo khoảng cách phổ biến nhất:
 
 \begin{itemize}
-    \item Lớp Embedding chuyển chuỗi từ thành ma trận đặc trưng kích thước $L \times d$ (độ dài chuỗi $\times$ số chiều embedding).
-    \item Các \textbf{lớp tích chập 1 chiều} với bộ lọc cỡ 3, 4, 5 từ trượt trên chuỗi để bắt các cụm từ (n-gram) quan trọng, ví dụ ``shocking!'' hay ``you won't believe\ldots'' --- các dấu hiệu văn phong tin giật gân.
-    \item Lớp \textbf{max-pooling} lấy giá trị lớn nhất của mỗi bản đồ đặc trưng, giữ lại tín hiệu mạnh nhất của mỗi loại cụm từ bất kể nó xuất hiện ở đâu trong bài.
-    \item Lớp fully-connected và sigmoid ra dự đoán.
+    \item \textbf{Khoảng cách Euclidean} --- độ dài đoạn thẳng nối hai điểm trong không gian đặc trưng:
+    \begin{equation}
+        d(x, y) = \sqrt{\sum_{j=1}^{n} \left(x_j - y_j\right)^2}
+        \label{eq:euclid}
+    \end{equation}
+    \item \textbf{Khoảng cách Manhattan} --- tổng độ chênh lệch theo từng thành phần (đi theo ``ô phố vuông''):
+    \begin{equation}
+        d(x, y) = \sum_{j=1}^{n} \left| x_j - y_j \right|
+        \label{eq:manhattan}
+    \end{equation}
+    \item \textbf{Khoảng cách cosine} --- đo độ lệch \textit{góc} giữa hai vector, bất kể độ dài vector:
+    \begin{equation}
+        d(x, y) = 1 - \cos(x, y) = 1 - \frac{x^{\top} y}{\lVert x \rVert \, \lVert y \rVert}
+        \label{eq:cos}
+    \end{equation}
 \end{itemize}
 
-CNN trích xuất đặc trưng cục bộ rất tốt và huấn luyện song song nhanh, nhưng chỉ nhìn trong ``khung cửa sổ'' bộ lọc; LSTM mô hình hóa ngữ cảnh tuần toàn chuỗi. Hai loại mạng thường được kết hợp (CNN-LSTM) để tận dụng ưu điểm của cả hai: CNN trích cụm từ đặc trưng cục bộ, LSTM tổng hợp chuỗi.
+Đối với dữ liệu văn bản, \textbf{cosine} là lựa chọn được ưa dùng: hai bài viết cùng chủ đề nhưng một bài dài một bài ngắn có thể có vector TF-IDF ``chỉ về cùng một hướng'' --- cosine coi chúng tương đồng cao, trong khi Euclidean bị chi phối bởi độ lớn các thành phần. Như đã chỉ ra ở đẳng thức \eqref{eq:l2-cos}, khi các vector đã được chuẩn hóa L2, khoảng cách Euclidean và khoảng cách cosine tạo ra \textit{cùng một thứ tự} láng giềng trên cùng dữ liệu; khác biệt then chốt nằm ở cách thư viện cài đặt phép tính trên ma trận thưa siêu chiều, sẽ được phân tích kỹ trong thí nghiệm E4 ở chương 3.
 
-\section{Các kỹ thuật huấn luyện}
+\subsection{Lựa chọn số láng giềng k}
+\label{sec:knn-k}
 
-\subsection{Hàm kích hoạt}
+Tham số quan trọng nhất của KNN là số láng giềng $k$:
 
-Mạng LSTM sử dụng \textbf{hàm tanh} và \textbf{sigmoid} bên trong các cổng. Tại lớp đầu ra của bài toán phân loại nhị phân, \textbf{hàm sigmoid} cho xác suất thuộc lớp dương:
+\begin{itemize}
+    \item \textbf{$k$ quá nhỏ} (ví dụ $k = 1$): mô hình chỉ dựa vào một láng giềng duy nhất, rất nhạy với nhiễu --- một bài viết dị biệt (ví dụ tin thật viết theo văn phong giật gân) có thể ``kéo'' cả dự đoán về phía sai. Ranh giới quyết định trở nên răng cưa, \textit{phương sai} cao.
+    \item \textbf{$k$ quá lớn}: dự đoán bị ``làm mượt'' bởi quá nhiều láng giềng, kể cả những láng giềng đã khá xa và ít liên quan, khiến ranh giới quá thô, \textit{độ lệch} cao.
+    \item Với bài toán \textbf{phân loại nhị phân}, $k$ nên chọn \textbf{số lẻ} để tránh hiện tượng hòa phiếu khi dùng bỏ phiếu đa số.
+\end{itemize}
 
-\begin{equation}
-    \sigma(z) = \frac{1}{1 + e^{-z}}
-    \label{eq:sigmoid}
-\end{equation}
+Trong thực hành, $k$ được xác định bằng kiểm chứng chéo trên tập phát triển; trong khuôn khổ đề tài, $k$ được khảo sát qua thí nghiệm E3 (chương 3) với $k \in \{1, 3, 5, 7, 9, 11\}$ trên cùng cách chia dữ liệu, và cấu hình chuẩn chọn $k = 5$ --- giá trị cân bằng phổ biến trong tài liệu \cite{sklearn}.
 
-Tại các lớp ẩn giữa (fully-connected), đề tài dùng \textbf{ReLU} (Rectified Linear Unit):
+\subsection{KNN có trọng số}
+\label{sec:knn-trong-so}
 
-\begin{equation}
-    \mathrm{ReLU}(z) = \max(0, z)
-    \label{eq:relu}
-\end{equation}
-
-ReLU là hàm kích hoạt tiêu chuẩn của mạng hiện đại vì tính toán nhanh, không bão hòa với giá trị dương, giúp giảm hiệu ứng tiêu biến gradient so với sigmoid/tanh.
-
-\subsection{Hàm mất mát}
-
-Hàm mất mát được sử dụng là \textbf{Binary Cross-Entropy}:
+Bỏ phiếu đa số thuần túy (\textit{uniform}) coi mọi láng giềng ngang hàng, dù láng giềng đó ở rất gần hay chỉ ``vừa đủ'' nằm trong top $k$. Phiên bản \textbf{KNN có trọng số theo khoảng cách} (\textit{distance}) khắc phục điều này bằng cách gán cho láng giềng thứ $i$ trọng số tỉ lệ nghịch với khoảng cách:
 
 \begin{equation}
-    \mathcal{L} = -\frac{1}{m} \sum_{i=1}^{m} \left[ y_i \log(\hat{y}_i) + (1 - y_i)\log(1 - \hat{y}_i) \right]
-    \label{eq:bce}
+    w_i = \frac{1}{d(x, x_i)}
+    \label{eq:distance-weight}
 \end{equation}
 
-với $m$ là số mẫu, $y_i$ là nhãn thật và $\hat{y}_i$ là xác suất dự đoán của mẫu $i$. Khi dự đoán đúng và tự tin ($\hat{y}_i \approx y_i$), thành phần mất mát gần 0; khi dự đoán sai và tự tin, mất mát rất lớn --- cơ chế ``trừng phạt'' hợp lý cho các sai lầm chắc chắn.
+Nhờ đó, một láng giềng ở rất gần (văn bản gần như trùng lặp về vector) có thể ``áp đảo'' nhiều láng giềng ở xa cộng lại. Trọng số theo khoảng cách còn cho ra \textbf{xác suất dự đoán mềm}: tỷ lệ trọng số của từng lớp trong $k$ láng giềng được dùng làm xác suất, cho phép vẽ đường cong ROC và thay đổi ngưỡng quyết định (mục độ đo ở cuối chương) thay vì chỉ nhận nhãn cứng.
 
-\subsection{Tối ưu hóa Adam}
+\subsection{Ưu nhược điểm và độ phức tạp}
 
-Mạng nơ-ron được huấn luyện bằng \textbf{gradient descent ngẫu nhiên} (SGD): lặp đi lặp lại cập nhật tham số theo hướng âm của gradient trên các lô dữ liệu nhỏ (mini-batch). \textbf{Adam} (Adaptive Moment Estimation) \cite{adam} là thuật toán tối ưu hóa cải tiến được sử dụng trong đề tài, kết hợp hai ý tưởng: \textit{động lượng} (momentum) --- tích lũy trung bình trượt của gradient để tạo quán tính đi qua vùng phẳng --- và \textit{chuẩn hóa gradient thích ứng} theo từng tham số (từ trung bình trượt bình phương gradient). Nhờ đó Adam hội tụ nhanh và ổn định trên các mạng nơ-ron sâu, là lựa chọn mặc định trong hầu hết các mô hình học sâu cho văn bản.
+\textbf{Ưu điểm của KNN:}
+\begin{itemize}
+    \item \textbf{Đơn giản, dễ cài đặt, dễ diễn giải}: kết quả dự đoán có thể ``giải thích'' ngay bằng danh sách $k$ bài viết gần nhất và nhãn của chúng --- đặc điểm quý giá cho bài toán phát hiện tin giả, nơi con người cần kiểm tra lại quyết định của máy.
+    \item \textbf{Không cần giai đoạn huấn luyện}: thêm dữ liệu mới (bài tin mới được xác thực) chỉ là thêm một mẫu vào kho lưu trữ, không phải huấn luyện lại mô hình.
+    \item \textbf{Ranh giới quyết định phi tuyến tự nhiên}: KNN không giả định bất kỳ dạng hàm nào (tuyến tính, đa thức\ldots), phù hợp dữ liệu có cấu trúc phức tạp.
+\end{itemize}
 
-\subsection{Dropout và chuẩn hóa}
-
-\textbf{Dropout} \cite{dropout} là kỹ thuật chống quá khớp (overfitting): trong quá trình huấn luyện, mỗi nơ-ron bị ``tắt'' ngẫu nhiên với xác suất $p$ (trong đề tài $p = 0{,}5$), buộc mạng học các biểu diễn dư thừa, không phụ thuộc vào một nơ-ron cụ thể. Khi kiểm tra, tất cả nơ-ron được bật lại. Quá khớp là nguy cơ lớn với mô hình học sâu trên dữ liệu văn bản (hàng triệu tham số), biểu hiện ở chỗ lỗi trên tập huấn luyện tiếp tục giảm trong khi lỗi trên tập kiểm tra tăng lên.
-
-Bên cạnh Dropout, các mô hình tuyến tính (Logistic Regression, Passive Aggressive) dùng \textbf{chuẩn hóa $L_2$} (thêm biểu thức $\lambda \lVert w \rVert^2$ vào hàm mất mát để ép trọng số nhỏ, mô hình mượt hơn) và \textbf{chuẩn hóa $L_1$} (ép về trọng số thưa, có tác dụng chọn đặc trưng).
-
-\subsection{Early Stopping}
-
-\textbf{Early Stopping} là kỹ thuật chặn huấn luyện sớm: trong suốt quá trình huấn luyện, lỗi trên tập kiểm tra (validation) được theo dõi sau mỗi vòng (epoch); nếu lỗi không giảm sau một số vòng liên tiếp (patience), quá trình huấn luyện dừng lại và trọng số tốt nhất được khôi phục. Kỹ thuật này vừa tiết kiệm thời gian, vừa là phương án chống quá khớp hiệu quả và đơn giản.
+\textbf{Nhược điểm của KNN:}
+\begin{itemize}
+    \item \textbf{Chi phí dự đoán lớn}: để dự đoán một mẫu, phải tính khoảng cách tới toàn bộ $n$ mẫu huấn luyện, độ phức tạp $O(n \cdot d)$ với $d$ là số chiều đặc trưng. Với $n = 29.328$ bài huấn luyện và vector 50.000 chiều, dự đoán 9.777 bài kiểm tra mất hàng phút --- chậm hơn hàng nghìn lần các mô hình tuyến tính (đo cụ thể ở chương 3). Đây là điểm khác biệt căn bản với học nhiệt tình: mô hình tuyến tính trả ``tiền'' ở lúc huấn luyện, KNN trả ``tiền'' ở mỗi lần dự đoán.
+    \item \textbf{Tốn bộ nhớ}: phải giữ nguyên toàn bộ tập huấn luyện.
+    \item \textbf{Nhạy cảm với đặc trưng không liên quan và thước đo khoảng cách}: trên không gian chiều rất cao (lời nguyền chiều, curse of dimensionality), các khoảng cách có xu hướng đồng nhất và ý nghĩa ``gần nhau'' bị suy giảm; việc chọn đặc trưng và phép đo khoảng cách quyết định chất lượng mô hình.
+\end{itemize}
 
 \section{Các độ đo đánh giá mô hình}
 
@@ -302,4 +291,4 @@ Từ đó tính được các độ đo:
 
 Một công cụ phân tích khác là \textbf{đường cong ROC} (Receiver Operating Characteristic) vẽ tỷ lệ TP theo tỷ lệ FP khi thay đổi ngưỡng quyết định, và \textbf{diện tích dưới đường cong AUC} (Area Under Curve): AUC = 1 là mô hình hoàn hảo, AUC = 0{,}5 tương đương dự đoán ngẫu nhiên. AUC đo chất lượng phân tách của mô hình \textit{không phụ thuộc ngưỡng}.
 
-Trong bộ dữ liệu ISOT, hai lớp gần cân bằng (51,2\%/48,8\%), nên Accuracy là chỉ tiêu so sánh chính trong báo cáo này, song song với F1-score và ma trận nhầm lẫn để phân tích chi tiết từng loại sai.
+Trong bộ dữ liệu ISOT, hai lớp gần cân bằng (54,2\%/45,8\%), nên Accuracy là chỉ tiêu so sánh chính trong báo cáo này, song song với F1-score và ma trận nhầm lẫn để phân tích chi tiết từng loại sai.

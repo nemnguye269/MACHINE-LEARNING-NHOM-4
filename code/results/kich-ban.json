@@ -1,18 +1,15 @@
 {
-  "E3_vocab20000": {
-    "accuracy": 0.9889,
-    "epochs": 6
+  "E3_k3": 0.8881,
+  "E3_k5_chuan": 0.8935,
+  "E3_k7": 0.894,
+  "E3_k_curve": {
+    "1": 0.8748,
+    "3": 0.8881,
+    "5": 0.8935,
+    "7": 0.894,
+    "9": 0.8976,
+    "11": 0.8963
   },
-  "E4_maxlen128": {
-    "accuracy": 0.9821,
-    "epochs": 3
-  },
-  "E4_maxlen400": {
-    "accuracy": 0.9889,
-    "epochs": 4
-  },
-  "E5_noDropout_noEarlyStop": {
-    "accuracy": 0.9865,
-    "epochs": 10
-  }
+  "E4_euclidean": 0.5561,
+  "E5_uniform": 0.8925
 }

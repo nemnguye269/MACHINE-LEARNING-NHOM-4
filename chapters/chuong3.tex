@@ -1,6 +1,6 @@
 \chapter[XÂY DỰNG MÔ HÌNH PHÁT HIỆN TIN TỨC GIẢ MẠO]{Xây dựng mô hình phát hiện tin tức giả mạo}
 
-Chương này trình bày toàn bộ quá trình xây dựng mô hình phát hiện tin tức giả mạo: từ mô tả bộ dữ liệu, quy trình tiền xử lý, thiết kế thí nghiệm, kiến trúc mô hình, tới kết quả huấn luyện, đánh giá, phân tích lỗi và ứng dụng demo.
+Chương này trình bày toàn bộ quá trình xây dựng mô hình phát hiện tin tức giả mạo: từ mô tả bộ dữ liệu, quy trình tiền xử lý, vector hóa, thiết kế thí nghiệm, thuật toán KNN trong đề tài, tới kết quả thực nghiệm, đánh giá, phân tích lỗi và ứng dụng demo.
 
 \section{Mô tả bộ dữ liệu}
 
@@ -89,9 +89,9 @@ Quy trình xây dựng mô hình trong đề tài gồm 6 bước, được trì
         \node[draw, text width=3.2cm, align=center] (pre) at (4.4,0)
             {Tiền xử lý\\ văn bản};
         \node[draw, text width=3.2cm, align=center] (feat) at (8.8,0)
-            {Vector hóa\\ (Tokenizer, Padding)};
+            {Vector hóa\\ TF-IDF};
         \node[draw, text width=3.2cm, align=center] (train) at (8.8,-2.6)
-            {Huấn luyện\\ mô hình LSTM};
+            {Xây dựng\\ mô hình KNN};
         \node[draw, text width=3.2cm, align=center] (eval) at (4.4,-2.6)
             {Đánh giá trên\\ tập kiểm tra};
         \node[draw, text width=3.2cm, align=center] (out) at (0,-2.6)
@@ -139,93 +139,98 @@ Stemming & ``us budget fight loom republican flip fiscal messag'' \\
 
 \section{Vector hóa dữ liệu}
 
-Sau tiền xử lý, văn bản cần được chuyển thành dạng số. Với mô hình LSTM, nhóm sử dụng cơ chế \textbf{Tokenize -- Padding} của Keras gồm hai bước:
-
-\begin{enumerate}
-    \item \textbf{Xây dựng từ điển (Tokenizer)}: đếm tần suất của tất cả các từ trên tập huấn luyện, giữ lại \textbf{10.000 từ phổ biến nhất}; mỗi từ được ánh xạ tới một chỉ số nguyên (ID). Việc giới hạn từ điển giúp loại bỏ các từ quá hiếm (gây nhiễu) và giảm kích thước lớp Embedding. Từ mới xuất hiện trong tập kiểm tra mà không có trong từ điển được thay bằng token đặc biệt OOV (out-of-vocabulary).
-    \item \textbf{Chuyển văn bản thành chuỗi và padding}: mỗi văn bản được thay bằng chuỗi ID của các từ cấu thành. Do các bài có độ dài khác nhau, chuỗi được \textbf{padding} về độ dài cố định \textbf{256}: chuỗi ngắn được bù giá trị 0, chuỗi dài bị cắt. Độ dài 256 được chọn cân bằng giữa hai yếu tố: đủ phủ phần lớn nội dung có ý nghĩa của bài viết, nhưng không quá lớn gây chậm huấn luyện (trung bình bài viết sau tiền xử lý còn khoảng 250--300 từ).
-\end{enumerate}
-
-Chuỗi ID sau đó được đưa vào lớp Embedding để chuyển thành chuỗi vector dày đặc, sẵn sàng cho mạng LSTM.
-
-\section{Kiến trúc mô hình LSTM}
-
-\subsection{Thiết kế kiến trúc}
-
-Mô hình chính của đề tài là mạng nơ-ron học sâu với cấu trúc tuần tự gồm 5 lớp, được mô tả tại sơ đồ \ref{sodo:kien-truc}.
-
-\begin{sodo}[H]
-    \centering
-    \begin{tikzpicture}[>=stealth, font=\small]
-        \node[draw, text width=6.5cm, align=center] (l1) at (0,0)
-            {Lớp Embedding\\[2pt] (10.000 từ $\times$ vector 64 chiều)};
-        \node[draw, text width=6.5cm, align=center] (l2) at (0,-1.7)
-            {Lớp LSTM\\[2pt] (64 nơ-ron)};
-        \node[draw, text width=6.5cm, align=center] (l3) at (0,-3.4)
-            {Lớp Dropout\\[2pt] ($p = 0{,}5$)};
-        \node[draw, text width=6.5cm, align=center] (l4) at (0,-5.1)
-            {Lớp Fully Connected\\[2pt] (32 nơ-ron, ReLU)};
-        \node[draw, text width=6.5cm, align=center] (l5) at (0,-6.8)
-            {Lớp đầu ra\\[2pt] (1 nơ-ron, Sigmoid)};
-        \foreach \a/\b in {l1/l2, l2/l3, l3/l4, l4/l5} {
-            \draw[->, thick] (\a) -- (\b);
-        }
-    \end{tikzpicture}
-    \SodoCaption{Kiến trúc mô hình LSTM phát hiện tin giả}{Nhóm tự xây dựng}
-    \label{sodo:kien-truc}
-\end{sodo}
-
-\textbf{Ý nghĩa từng lớp:}
+Sau tiền xử lý, văn bản cần được chuyển thành dạng số. Nhóm sử dụng \textbf{TF-IDF} (cơ sở lý thuyết tại mục \ref{sec:tfidf} chương 2; tham số hóa qua TfidfVectorizer của thư viện scikit-learn \cite{sklearn}) với cấu hình:
 
 \begin{itemize}
-    \item \textbf{Lớp Embedding} chuyển mỗi chỉ số từ thành vector 64 chiều, giúp mô hình học được quan hệ ngữ nghĩa giữa các từ: các từ thường xuất hiện trong ngữ cảnh giống nhau (đặc biệt các từ dấu hiệu văn phong tin giả) sẽ có vector gần nhau. Vector này được học trực tiếp cùng toàn bộ mạng trong quá trình huấn luyện.
-    \item \textbf{Lớp LSTM} với 64 nơ-ron đọc chuỗi vector theo thứ tự và tổng hợp thông tin ngữ cảnh của toàn bộ bài viết vào trạng thái ẩn cuối cùng. Kích thước 64 là điểm cân bằng giữa khả năng biểu diễn (càng nhiều nơ-ron càng tốt) và thời gian huấn luyện trên tài nguyên sẵn có.
-    \item \textbf{Lớp Dropout} với tỷ lệ 0,5 tắt ngẫu nhiên một nửa nơ-ron khi huấn luyện nhằm hạn chế quá khớp.
-    \item \textbf{Lớp Fully Connected} với 32 nơ-ron và hàm kích hoạt ReLU học các tổ hợp phi tuyến của đặc trưng mà LSTM tổng hợp được.
-    \item \textbf{Lớp đầu ra} gồm 1 nơ-ron với hàm sigmoid, cho ra xác suất bài viết là tin giả. Xác suất $\geq 0{,}5$ được phân vào lớp tin giả, ngược lại là tin thật.
+    \item \textbf{n-gram $(1, 2)$}: đặc trưng gồm cả từ đơn (unigram) và cặp từ liên tiếp (bigram), giúp giữ lại một phần ngữ nghĩa kiểu ``breaking news'', ``fake witness''.
+    \item \textbf{max\_features $= 50.000$}: chỉ giữ lại 50.000 n-gram có tần suất tài liệu cao nhất, loại bỏ các n-gram quá hiếm chỉ gây nhiễu và tốn bộ nhớ.
+    \item \textbf{Chuẩn hóa L2} (mặc định): mỗi vector văn bản được chia cho độ dài Euclidean của chính nó, đưa mọi bài về cùng một thang đo bất kể độ dài --- điều kiện quan trọng để khoảng cách cosine phản ánh đúng độ tương đồng giữa các bài viết.
 \end{itemize}
 
-\subsection{Cấu hình huấn luyện}
+Ma trận đặc trưng cuối cùng có kích thước \textbf{29.328 $\times$ 50.000} (rất thưa: mỗi bài chỉ dùng tới vài trăm n-gram). Vectorizer được \textbf{fit trên tập huấn luyện} rồi chỉ \textit{transform} tập kiểm tra, bảo đảm không có thông tin từ tập kiểm tra rò rỉ vào bước xây dựng đặc trưng. Cùng một ma trận TF-IDF được dùng cho cả bốn mô hình (KNN và ba mô hình tham chiếu), bảo đảm so sánh công bằng giữa các thuật toán.
+
+\section{Thuật toán KNN trong đề tài}
+
+\subsection{Cấu hình mô hình}
+
+Mô hình chính của đề tài là KNN với cấu hình được tổng hợp trong bảng \ref{tab:tham-so-mo-hinh}.
 
 \begin{table}[H]
 \centering
-\caption{Cấu hình huấn luyện mô hình}
+\caption{Cấu hình thuật toán KNN}
 \label{tab:tham-so-mo-hinh}
 \begin{tabular}{|l|l|}
 \hline
 \textbf{Thành phần} & \textbf{Giá trị lựa chọn} \\
 \hline
-Từ điển tối đa & 10.000 từ \\
+Đặc trưng đầu vào & TF-IDF (n-gram $1$--$2$, 50.000 đặc trưng) \\
 \hline
-Độ dài chuỗi (max length) & 256 \\
+Số láng giềng $k$ & 5 \\
 \hline
-Kích thước vector Embedding & 64 \\
+Phép đo khoảng cách & Cosine \\
 \hline
-Số nơ-ron LSTM & 64 \\
+Trọng số láng giềng & Theo khoảng cách ($w_i = 1/d_i$) \\
 \hline
-Tỷ lệ Dropout & 0,5 \\
+Cách tìm láng giềng & Brute force (quét toàn bộ tập huấn luyện) \\
 \hline
-Hàm mất mát & Binary Cross-Entropy \\
-\hline
-Thuật toán tối ưu & Adam (learning rate $10^{-3}$) \\
-\hline
-Kích thước lô (batch size) & 64 \\
-\hline
-Số vòng huấn luyện (epochs) & 10 (có Early Stopping, patience $= 2$) \\
+Ngưỡng quyết định & 0,5 (theo tỷ lệ trọng số bỏ phiếu) \\
 \hline
 Tỷ lệ chia dữ liệu & 75\% huấn luyện / 25\% kiểm tra \\
 \hline
 \end{tabular}
-\Nguon{Nhóm tự xây dựng}
+\Nguon{Nhóm tự xây dựng (thư viện scikit-learn \cite{sklearn})}
 \end{table}
 
-Các siêu tham số trên được lựa chọn qua các thí nghiệm trình bày ở mục Kết quả thực nghiệm (kịch bản E3--E5): từ điển 20.000 từ không cải thiện mà giảm nhẹ độ chính xác (98,89\% so với 99,20\%) do các từ hiếm chỉ thêm nhiễu; độ dài chuỗi 256 là điểm cân bằng giữa việc giữ đủ nội dung bài viết và thời gian huấn luyện; batch size 64 cho huấn luyện ổn định hơn với văn bản dài.
+Các lựa chọn trên được kiểm chứng qua các thí nghiệm ở mục \ref{sec:kq-thuc-nghiem}: $k = 5$ nằm trong vùng cấu hình ổn định của đường cong theo $k$ (E3); cosine là phép đo phù hợp cho vector TF-IDF chuẩn hóa (E4); trọng số theo khoảng cách nhỉnh hơn trọng số đều (E5).
+
+\subsection{Sơ đồ hoạt động khi dự đoán}
+
+Sơ đồ \ref{sodo:kien-truc} mô tả luồng xử lý khi mô hình kiểm tra một bài tin tức mới.
+
+\begin{sodo}[H]
+    \centering
+    \begin{tikzpicture}[>=stealth, font=\small]
+        \node[draw, text width=3.0cm, align=center] (n1) at (0,0)
+            {Bài tin mới\\ (tiêu đề + nội dung)};
+        \node[draw, text width=3.0cm, align=center] (n2) at (3.85,0)
+            {Tiền xử lý\\ (làm sạch văn bản)};
+        \node[draw, text width=3.0cm, align=center] (n3) at (7.7,0)
+            {Vector TF-IDF\\ (50.000 chiều, chuẩn hóa L2)};
+        \node[draw, text width=3.0cm, align=center] (n4) at (11.55,0)
+            {Tính khoảng cách cosine\\ tới 29.328 bài huấn luyện};
+        \node[draw, text width=3.0cm, align=center] (n5) at (11.55,-2.7)
+            {Chọn 5 láng giềng\\ gần nhất};
+        \node[draw, text width=3.0cm, align=center] (n6) at (7.7,-2.7)
+            {Bỏ phiếu có trọng số\\ ($w_i = 1/d_i$)};
+        \node[draw, text width=3.0cm, align=center] (n7) at (3.85,-2.7)
+            {Kết quả: nhãn\\ + xác suất tin giả};
+        \draw[->, thick] (n1) -- (n2);
+        \draw[->, thick] (n2) -- (n3);
+        \draw[->, thick] (n3) -- (n4);
+        \draw[->, thick] (n4) -- (n5);
+        \draw[->, thick] (n5) -- (n6);
+        \draw[->, thick] (n6) -- (n7);
+    \end{tikzpicture}
+    \SodoCaption{Luồng xử lý khi KNN dự đoán một bài tin tức mới}{Nhóm tự xây dựng}
+    \label{sodo:kien-truc}
+\end{sodo}
+
+Xác suất ``tin giả'' mà hệ thống hiển thị cho người dùng chính là \textbf{tỷ lệ trọng số} của các láng giềng thuộc lớp tin giả trong $k = 5$ láng giềng gần nhất:
+\begin{equation}
+    \hat{p}(\text{giả}) = \frac{\sum_{i \in N_k(x),\, y_i = 1} 1/d_i}{\sum_{i \in N_k(x)} 1/d_i},
+    \label{eq:xac-suat-knn}
+\end{equation}
+và bài viết được cảnh báo là tin giả khi $\hat{p}(\text{giả}) \geq 0{,}5$. Cơ chế này cho phép ứng dụng hiển thị ``độ tin cậy'' liên tục thay vì chỉ nhãn cứng, đồng thời là đầu vào cho đường cong ROC ở phần đánh giá.
+
+\subsection{Đặc điểm lazy learning của KNN}
+
+Điểm khác biệt căn bản của KNN so với các mô hình tham chiếu nằm ở phân bổ chi phí tính toán. Bước ``huấn luyện'' của KNN chỉ là \textbf{ghi nhớ} ma trận TF-IDF của tập huấn luyện --- gần như tốn 0 giây; ngược lại, mỗi lần dự đoán phải tính khoảng cách từ bài cần kiểm tra tới \textit{tất cả} 29.328 bài huấn luyện (độ phức tạp $O(n_{\text{train}} \cdot d)$ mỗi mẫu). Với 9.777 bài kiểm tra, tổng chi phí dự đoán lên tới hàng phút --- chậm hơn khoảng \textbf{9.000 lần} mô hình tuyến tính, vốn trả trọn ``tiền học'' trong vài phần mươi giây huấn luyện và dự đoán gần như tức thì. Sự đánh đổi này được đo đạc và phân tích cụ thể ở mục \ref{sec:kq-thuc-nghiem} và \ref{sec:nhan-xet}.
 
 \section{Thiết kế thí nghiệm}
 
 \subsection{Mô hình tham chiếu}
 
-Để có cơ sở so sánh, đề tài huấn luyện song song ba mô hình học máy truyền thống trên cùng bộ dữ liệu, sử dụng đặc trưng TF-IDF (n-gram $n = 1..2$):
+Để có cơ sở so sánh, đề tài xây dựng song song ba mô hình học máy truyền thống trên cùng bộ dữ liệu, sử dụng đúng ma trận đặc trưng TF-IDF (n-gram $n = 1..2$):
 
 \begin{itemize}
     \item \textbf{Multinomial Naive Bayes}: mô hình xác suất dựa trên định lý Bayes, giả định các đặc trưng độc lập.
@@ -245,15 +250,15 @@ Thí nghiệm được thiết kế gồm các kịch bản:
 \hline
 \textbf{STT} & \textbf{Kịch bản} & \textbf{Mục đích} \\
 \hline
-E1 & Huấn luyện 3 mô hình truyền thống với TF-IDF & Xây dựng baseline so sánh \\
+E1 & Xây dựng 3 mô hình tham chiếu với TF-IDF & Xây dựng baseline so sánh \\
 \hline
-E2 & Huấn luyện mô hình LSTM (cấu hình bảng \ref{tab:tham-so-mo-hinh}) & Mô hình chính của đề tài \\
+E2 & KNN cấu hình chuẩn (bảng \ref{tab:tham-so-mo-hinh}) & Mô hình chính của đề tài \\
 \hline
-E3 & Thay đổi từ điển: 10.000 / 20.000 từ & Ảnh hưởng kích thước từ điển \\
+E3 & Thay đổi số láng giềng: $k = 1 / 3 / 5 / 7 / 9 / 11$ & Ảnh hưởng của tham số $k$ \\
 \hline
-E4 & Thay đổi độ dài chuỗi: 128 / 256 / 400 & Ảnh hưởng độ dài đầu vào \\
+E4 & Thay đổi phép đo khoảng cách: cosine / euclidean & Ảnh hưởng của thước đo tương đồng \\
 \hline
-E5 & Bỏ/tắt Dropout và Early Stopping & Kiểm chứng vai trò chống quá khớp \\
+E5 & Thay đổi trọng số láng giềng: distance / uniform & Ảnh hưởng của cơ chế bỏ phiếu \\
 \hline
 \end{tabular}
 \Nguon{Nhóm tự xây dựng}
@@ -273,9 +278,7 @@ Mỗi kịch bản được chạy với cùng một cách chia dữ liệu (c�
 \hline
 Ngôn ngữ lập trình & Python 3.12 \\
 \hline
-Thư viện học máy & scikit-learn \\
-\hline
-Thư viện học sâu & TensorFlow 2.x / Keras \\
+Thư viện học máy & scikit-learn (KNN, Naive Bayes, Logistic Regression, Passive Aggressive) \\
 \hline
 Thư viện xử lý ngôn ngữ & NLTK \\
 \hline
@@ -290,53 +293,10 @@ Môi trường thực thi & Máy tính cá nhân (CPU, hệ điều hành Window
 \section{Kết quả thực nghiệm}
 \label{sec:kq-thuc-nghiem}
 
-% Số liệu dưới đây là kết quả huấn luyện thực tế của nhóm (log Keras).
-\subsection{Quá trình huấn luyện mô hình LSTM}
-
-Mô hình được huấn luyện tối đa 10 vòng trên tập huấn luyện, mỗi vòng quét toàn bộ tập huấn luyện qua các lô 64 mẫu. Lỗi trên tập kiểm tra được theo dõi sau mỗi vòng để chặn huấn luyện sớm (Early Stopping) khi lỗi không giảm thêm. Bảng \ref{tab:lich-su-huan-luyen} là lịch sử huấn luyện thực tế của mô hình: Early Stopping dừng sau vòng thứ 5 và khôi phục trọng số của vòng tốt nhất là vòng thứ 3.
-
-\begin{table}[H]
-\centering
-\caption{Lịch sử huấn luyện thực tế của mô hình LSTM theo các vòng}
-\label{tab:lich-su-huan-luyen}
-\begin{tabular}{|c|c|c|c|c|}
-\hline
-\textbf{Epoch} & \textbf{Loss (train)} & \textbf{Accuracy (train)} & \textbf{Loss (test)} & \textbf{Accuracy (test)} \\
-\hline
-1 & 0,1231 & 96,10\% & 0,0677 & 97,86\% \\
-\hline
-2 & 0,0362 & 99,02\% & 0,0442 & 98,86\% \\
-\hline
-\textbf{3} & 0,0226 & 99,41\% & \textbf{0,0364} & \textbf{99,20\%} \\
-\hline
-4 & 0,0216 & 99,42\% & 0,0401 & 98,89\% \\
-\hline
-5 & 0,0106 & 99,74\% & 0,0519 & 98,70\% \\
-\hline
-\end{tabular}
-\Nguon{Nhóm tự thực hiện (log huấn luyện Keras)}
-\end{table}
-
-Quá trình huấn luyện cho thấy một số quan sát đáng chú ý:
-
-\begin{itemize}
-    \item Mô hình hội tụ \textbf{rất nhanh}: chỉ sau vòng đầu tiên, độ chính xác trên tập kiểm tra đã đạt 97,86\%, và đạt đỉnh 99,20\% ở vòng thứ 3. Điều này cho thấy các dấu hiệu phân biệt tin thật/giả trong bộ dữ liệu ISOT khá rõ ràng với mô hình học ngữ cảnh.
-    \item Từ vòng thứ 4 trở đi, lỗi trên tập huấn luyện tiếp tục giảm (0,0106 ở vòng thứ 5) trong khi lỗi trên tập kiểm tra tăng trở lại (0,0364 $\rightarrow$ 0,0519) --- dấu hiệu \textbf{quá khớp} bắt đầu xuất hiện. Cơ chế Early Stopping với patience $= 2$ dừng huấn luyện sau vòng thứ 5 và khôi phục trọng số của vòng tốt nhất (vòng thứ 3), đúng vai trò chống quá khớp như thiết kế.
-\end{itemize}
-
-Hình \ref{fig:bieu-do-loss} là biểu đồ lỗi và độ chính xác theo vòng huấn luyện.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.85\textwidth]{images/loss-curve.png}
-    \caption{Biểu đồ lỗi và độ chính xác của mô hình LSTM theo vòng huấn luyện}
-    \label{fig:bieu-do-loss}
-    \Nguon{Nhóm tự thực hiện (matplotlib trên log huấn luyện Keras)}
-\end{figure}
-
+% Số liệu dưới đây là kết quả chạy thực tế của nhóm (log scikit-learn).
 \subsection{Kết quả trên tập kiểm tra}
 
-Bảng \ref{tab:ket-qua} tổng hợp kết quả của các mô hình trên tập kiểm tra (25\% dữ liệu).
+Bảng \ref{tab:ket-qua} tổng hợp kết quả của bốn mô hình trên tập kiểm tra (25\% dữ liệu, 9.777 bài).
 
 \begin{table}[H]
 \centering
@@ -350,75 +310,137 @@ Naive Bayes + TF-IDF & 95,81 & 95,31 & 95,39 & 95,35 \\
 \hline
 Logistic Regression + TF-IDF & 98,84 & 99,29 & 98,14 & 98,71 \\
 \hline
-Passive Aggressive + TF-IDF & \textbf{99,42} & \textbf{99,54} & \textbf{99,16} & \textbf{99,35} \\
+Passive Aggressive + TF-IDF & \textbf{99,37} & \textbf{99,48} & \textbf{99,11} & \textbf{99,30} \\
 \hline
-\textbf{LSTM (mô hình đề xuất)} & 99,20 & 99,47 & 98,75 & 99,11 \\
+\textbf{KNN (mô hình đề xuất)} & 89,35 & 93,24 & 82,34 & 87,45 \\
 \hline
 \end{tabular}
 \Nguon{Nhóm tự thực hiện}
 \end{table}
 
-Kết quả cho thấy tất cả các mô hình đều vượt xa mức $\sim$93\% của Passive Aggressive trong nghiên cứu gốc \cite{ahmed2017} trên cùng bộ dữ liệu. Đáng chú ý, \textbf{Passive Aggressive đạt cao nhất (99,42\%)}, nhỉnh hơn mô hình LSTM của đề tài (99,20\%); LSTM cao hơn hẳn Naive Bayes (95,81\%) và nhỉnh nhẹ hơn Logistic Regression (98,84\%). Việc các mô hình tuyến tính TF-IDF đạt gần 99\% là một tín hiệu quan trọng: bộ dữ liệu ISOT thu tin thật và tin giả từ hai nhóm nguồn khác biệt (Reuters so với các trang đăng tin giả), nên nhiều từ --- tên chủ đề, kiểu văn phong, cách viết tiêu đề --- gắn chặt với từng lớp, khiến mô hình dựa trên tần suất từ cũng phân loại được gần như hoàn hảo. Trên dữ liệu ``khó'' hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống, lợi thế của LSTM --- khả năng học ngữ cảnh và quan hệ giữa các từ --- mới có thể bộc lộ rõ. Đây là điểm nhóm sẽ quay lại trong mục \ref{sec:nhan-xet}.
+Kết quả cho thấy cả ba mô hình tham chiếu đều vượt xa mức $\sim$93\% của Passive Aggressive trong nghiên cứu gốc \cite{ahmed2017} trên cùng bộ dữ liệu, với \textbf{Passive Aggressive đạt cao nhất (99,37\%)}. Các mô hình tuyến tính TF-IDF đạt gần 99\% là một tín hiệu quan trọng: bộ dữ liệu ISOT thu tin thật và tin giả từ hai nhóm nguồn khác biệt (Reuters so với các trang đăng tin giả), nên nhiều từ --- tên chủ đề, kiểu văn phong, cách viết tiêu đề --- gắn chặt với từng lớp, khiến mô hình học ranh giới toàn cục trên tần suất từ phân loại được gần như hoàn hảo.
 
-Hình \ref{fig:confusion} là ma trận nhầm lẫn của mô hình LSTM trên tập kiểm tra.
+KNN đạt \textbf{89,35\%} --- thấp nhất trong bốn mô hình, thấp hơn Passive Aggressive 10 điểm phần trăm. Đây là kết quả đặc trưng của KNN trên dữ liệu văn bản: thay vì học một ranh giới quyết định toàn cục, KNN quyết định theo láng giềng cục bộ, nên dễ bị ảnh hưởng bởi những bài viết có từ vựng giao thoa giữa hai lớp và bởi các mẫu nhiễu (phân tích chi tiết ở mục \ref{sec:nhan-xet} và phần kịch bản thí nghiệm). Dù vậy, 89,35\% là mức không tồi đối với một thuật toán \textit{hoàn toàn không thực hiện học}: toàn bộ hiệu năng đến từ việc so khớp trực tiếp với các bài viết đã biết.
+
+Hình \ref{fig:confusion} là ma trận nhầm lẫn của mô hình KNN trên tập kiểm tra.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{images/confusion-matrix.png}
-    \caption{Ma trận nhầm lẫn của mô hình LSTM trên tập kiểm tra}
+    \caption{Ma trận nhầm lẫn của mô hình KNN trên tập kiểm tra}
     \label{fig:confusion}
     \Nguon{Nhóm tự thực hiện (matplotlib trên tập kiểm tra)}
 \end{figure}
 
-Hình \ref{fig:roc} thể hiện đường cong ROC của mô hình LSTM.
+Ma trận nhầm lẫn cho thấy sự bất cân xứng giữa hai loại sai: trong 5.371 bài tin thật, 5.108 bài được nhận đúng (recall 95,10\%), chỉ 263 bài bị nhầm là giả; trong 4.406 bài tin giả, 3.628 bài được bắt đúng (recall 82,34\%) nhưng \textbf{778 bài bị bỏ sót} --- tức khoảng 1/5 tin giả lọt qua được xem là tin thật. Với hệ thống phát hiện tin giả, đây là loại sai đáng lo ngại nhất (tin độc hại tiếp tục lan truyền), và là điểm cần cải thiện khi nâng cấp mô hình.
+
+Hình \ref{fig:roc} thể hiện đường cong ROC của mô hình KNN, với AUC $= 0{,}9601$.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.75\textwidth]{images/roc-curve.png}
-    \caption{Đường cong ROC của mô hình LSTM trên tập kiểm tra}
+    \caption{Đường cong ROC của mô hình KNN trên tập kiểm tra (AUC = 0,9601)}
     \label{fig:roc}
     \Nguon{Nhóm tự thực hiện (matplotlib trên tập kiểm tra)}
 \end{figure}
 
-Đường cong ROC đi sát sát góc trên bên trái của đồ thị, phản ánh khả năng phát hiện cao ở hầu hết mọi ngưỡng phân loại, không phụ thuộc vào việc chọn ngưỡng 0,5 mặc định.
+Đường cong ROC đi sát góc trên bên trái của đồ thị và AUC gần 0,96 cho thấy khả năng \textit{xếp hạng} của mô hình tốt hơn nhiều so với độ chính xác tại ngưỡng 0,5 mặc định: với cùng xác suất bỏ phiếu, chỉ cần \textbf{chọn ngưỡng thấp hơn} (ví dụ 0,4) hệ thống sẽ bắt được nhiều tin giả hơn, đánh đổi bằng việc gắn cờ nhầm nhiều tin thật hơn. Đây là lợi thế của cơ chế bỏ phiếu có trọng số, cho phép ``vặn'' mức nhạy cảm của hệ thống theo nhu cầu sử dụng.
 
-\subsection{Kết quả các kịch bản thí nghiệm}
+\subsection{Chi phí huấn luyện và dự đoán}
 
-Bảng \ref{tab:ket-qua-kich-ban} tổng hợp kết quả các kịch bản thí nghiệm E3--E5 với mô hình LSTM.
+Bảng \ref{tab:chi-phi} ghi lại thời gian thực đo được của từng mô hình --- chỉ số đặc biệt ý nghĩa khi so sánh KNN với các mô hình học nhiệt tình.
 
 \begin{table}[H]
 \centering
-\caption{Kết quả các kịch bản thí nghiệm với mô hình LSTM}
+\caption{Thời gian huấn luyện và dự đoán thực đo của các mô hình}
+\label{tab:chi-phi}
+\begin{tabular}{|l|c|c|}
+\hline
+\textbf{Mô hình} & \textbf{Huấn luyện (s)} & \textbf{Dự đoán 9.777 bài (s)} \\
+\hline
+Naive Bayes & 0,11 & 0,02 \\
+\hline
+Logistic Regression & 0,42 & 0,02 \\
+\hline
+Passive Aggressive & 0,20 & 0,02 \\
+\hline
+KNN & \textbf{0,03} & 183,29 \\
+\hline
+\end{tabular}
+\Nguon{Nhóm tự thực hiện (đo trên CPU cá nhân)}
+\end{table}
+
+Bảng này phản ánh đúng bản chất \textbf{lazy learning}: KNN ``huấn luyện'' nhanh nhất bảng (0,03 giây --- chỉ là ghi nhớ dữ liệu) nhưng dự đoán chậm nhất bảng một cách cách biệt (183,29 giây cho 9.777 bài, tương đương $\approx$ 19 ms mỗi bài), chậm hơn khoảng \textbf{9.000 lần} các mô hình tuyến tính (0,02 giây). Chi phí không biến mất mà chỉ được \textit{chuyển} từ lúc học sang mỗi lần sử dụng: mô hình tuyến tính trả ``tiền học'' một lần trong huấn luyện, KNN trả ``tiền tra cứu'' ở mọi truy vấn. Với ứng dụng demo kiểm tra từng bài riêng lẻ, 19 ms mỗi bài là chấp nhận được; nhưng ở quy mô hệ thống sàng lọc hàng triệu bài, chi phí này đòi hỏi các cấu trúc chỉ mục láng giềng gần nhất chuyên dụng (hướng phát triển ở kết luận).
+
+\subsection{Kết quả các kịch bản thí nghiệm}
+
+\subsubsection{E3 --- Ảnh hưởng của số láng giềng k}
+
+Bảng \ref{tab:ket-qua-kich-ban} và hình \ref{fig:do-chinh-xac-theo-k} tổng hợp kết quả các kịch bản E3--E5.
+
+\begin{table}[H]
+\centering
+\caption{Kết quả các kịch bản thí nghiệm với mô hình KNN}
 \label{tab:ket-qua-kich-ban}
-\begin{tabular}{|c|p{6.5cm}|c|}
+\begin{tabular}{|c|p{7.5cm}|c|}
 \hline
 \textbf{Kịch bản} & \textbf{Cấu hình} & \textbf{Accuracy (\%)} \\
 \hline
-E2 & Cấu hình chuẩn (bảng \ref{tab:tham-so-mo-hinh}) & \textbf{99,20} \\
+E2 & Cấu hình chuẩn: $k = 5$, cosine, distance & 89,35 \\
 \hline
-E3 & Từ điển 20.000 từ & 98,89 \\
+E3 & $k = 1$ (cosine, distance) & 87,48 \\
 \hline
-E4 & Độ dài chuỗi 128 & 98,21 \\
+E3 & $k = 3$ (cosine, distance) & 88,81 \\
 \hline
-E4 & Độ dài chuỗi 400 & 98,89 \\
+E3 & $k = 7$ (cosine, distance) & 89,40 \\
 \hline
-E5 & Bỏ Dropout + Early Stopping (chạy đủ 10 vòng) & 98,65 \\
+E3 & $k = 9$ (cosine, distance) & \textbf{89,76} \\
+\hline
+E3 & $k = 11$ (cosine, distance) & 89,63 \\
+\hline
+E4 & Euclidean thay cosine ($k = 5$, distance) & 55,61 \\
+\hline
+E5 & Uniform thay distance ($k = 5$, cosine) & 89,25 \\
 \hline
 \end{tabular}
-\Nguon{Nhóm tự thực hiện (kịch bản E3--E5, cùng cách chia dữ liệu)}
+\Nguon{Nhóm tự thực hiện (cùng cách chia dữ liệu, seed cố định)}
 \end{table}
 
-Từ bảng trên có thể rút ra:
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/do-chinh-xac-theo-k.png}
+    \caption{Độ chính xác của KNN theo số láng giềng $k$ (kịch bản E3)}
+    \label{fig:do-chinh-xac-theo-k}
+    \Nguon{Nhóm tự thực hiện (matplotlib, kịch bản E3)}
+\end{figure}
+
+Từ kết quả E3 có thể rút ra:
 
 \begin{itemize}
-    \item \textbf{Kích thước từ điển (E3)}: tăng từ điển lên 20.000 từ không cải thiện mà còn giảm nhẹ độ chính xác (98,89\% so với 99,20\%). 10.000 từ phổ biến nhất đã bao phủ gần hết nội dung mang thông tin của các bài viết; các từ hiếm hơn chỉ bổ sung nhiễu cho lớp Embedding.
-    \item \textbf{Độ dài chuỗi (E4)}: cắt chuỗi xuống 128 từ làm giảm rõ độ chính xác (98,21\%) vì mất đi phần nội dung cuối bài, nơi nhiều bài tin chứa các chi tiết khẳng định hay trích dẫn; tăng lên 400 từ cũng không tốt hơn (98,89\%) do phần đầu bài đã chứa hầu hết dấu hiệu phân biệt, còn padding quá dài làm tăng nhiễu và thời gian huấn luyện. Kết quả xác nhận lựa chọn 256 là hợp lý.
-    \item \textbf{Dropout và Early Stopping (E5)}: khi bỏ cả hai và chạy đủ 10 vòng, độ chính xác trên tập huấn luyện lên tới 99,95\% (loss 0,0023) trong khi trên tập kiểm tra chỉ đạt 98,65\% --- chênh lệch hơn 1,3 điểm phần trăm là dấu hiệu \textbf{quá khớp} rõ ràng, thấp hơn cấu hình chuẩn 0,55 điểm phần trăm. Kết quả khẳng định vai trò của Dropout (hạn chế quá khớp) và Early Stopping (tự dừng đúng thời điểm, khôi phục trọng số tốt nhất).
+    \item \textbf{$k = 1$ cho kết quả thấp nhất (87,48\%)}: với một láng giềng duy nhất, dự đoán phụ thuộc hoàn toàn vào bài viết ``giống nhất'', rất nhạy với nhiễu --- một bài tin thật văn phong giật gân đủ để kéo cả dự đoán sang lớp giả. Điều này minh họa trực quan hành vi \textit{phương sai cao} phân tích ở chương 2.
+    \item \textbf{Tăng $k$ làm kết quả ổn dần và đạt đỉnh tại $k = 9$ (89,76\%)}, sau đó giảm nhẹ ở $k = 11$ (89,63\%). Vùng $k = 5$--$9$ cho kết quả gần nhau (89,35\%--89,76\%), chênh lệch lớn nhất chỉ 0,41 điểm phần trăm --- nằm trong biến động ngẫu nhiên.
+    \item Đề tài giữ cấu hình chuẩn \textbf{$k = 5$}: là giá trị cân bằng phổ biến trong tài liệu, nằm trong vùng ổn định, và tránh bám đuổi một đỉnh nhỏ có thể là nhiễu của tập kiểm tra cụ thể này.
 \end{itemize}
+
+\subsubsection{E4 --- Ảnh hưởng của phép đo khoảng cách}
+
+Đây là kịch bản cho kết quả bất ngờ nhất: thay cosine bằng euclidean (cùng $k = 5$, cùng trọng số distance) làm độ chính xác \textbf{rơi từ 89,35\% xuống 55,61\%} --- gần với mức đoán theo lớp đa số (54,2\% bài tin thật). Vì theo đẳng thức \eqref{eq:l2-cos}, trên các vector chuẩn hóa L2 hai phép đo lẽ ra cho cùng thứ tự láng giềng, nhóm tiến hành chẩn đoán chi tiết và phát hiện nguyên nhân:
+
+\begin{itemize}
+    \item \textbf{Nguồn gốc vector 0}: sau tiền xử lý, một số rất ít bài viết (3 bài trong 29.328 bài huấn luyện) trở thành \textit{rỗng} (chỉ gồm từ dừng, dấu câu, chữ số\ldots) và có vector TF-IDF bằng 0 thay vì chuẩn hóa L2.
+    \item \textbf{Euclidean ``mê'' vector 0}: khoảng cách euclidean từ một bài cần kiểm tra (vector chuẩn hóa, $\lVert q \rVert = 1$) tới vector 0 là $1{,}0$, trong khi khoảng cách tới các bài viết thường nằm quanh $1{,}38$--$1{,}41$ (các vector văn bản dị biệt gần như trực giao). Vì vậy các bài rỗng --- mang nhãn \textit{ngẫu nhiên} do nội dung đã bị xóa sạch --- lọt vào top-5 láng giềng của hầu hết bài kiểm tra (kiểm chứng thực đo: top-5 của euclidean chứa các láng giềng ở đúng $d = 1{,}000000$) và bỏ phiếu nhiễu vào kết quả.
+    \item \textbf{Cosine miễn nhiễm}: khoảng cách cosine của vector 0 được quy ước bằng $1{,}0$ (tối đa), trong khi \textit{mọi} bài viết thật chia sẻ ít nhất một từ với bài cần kiểm tra đều có khoảng cách $< 1{,}0$ --- tức các bài rỗng luôn xếp sau toàn bộ bài có chung từ vựng và hầu như không bao giờ vào top-5.
+\end{itemize}
+
+Khi loại bỏ các bài rỗng khỏi tập huấn luyện, kết quả euclidean trở về ngang với cosine (thí nghiệm chẩn đoán trên 300 bài: trước lọc euclidean 56,33\% so với cosine 89,33\%; sau lọc euclidean 89,00\% so với cosine 89,33\% --- chênh lệch chỉ còn 0,33 điểm phần trăm), khẳng định chênh lệch 55,61\% xuất phát từ tương tác giữa \textbf{chất lượng dữ liệu} (bài rỗng) và \textbf{phép đo khoảng cách} chứ không phải từ bản chất euclidean. Bài học thực nghiệm rút ra hai lớp: (i) với văn bản, \textbf{cosine là lựa chọn bền vững} vì đo góc giữa hai vector, không bị chi phối bởi độ lớn vector; (ii) KNN đặc biệt nhạy với các mẫu nhiễu/đặc biệt trong dữ liệu --- những mẫu này không làm méo ``trọng số toàn cục'' như với mô hình tuyến tính mà trực tiếp cạnh tranh vị trí láng giềng.
+
+\subsubsection{E5 --- Ảnh hưởng của cơ chế bỏ phiếu}
+
+Thay bỏ phiếu đa số thuần túy (uniform) bằng bỏ phiếu có trọng số theo khoảng cách (distance) làm độ chính xác tăng nhẹ từ 89,25\% lên 89,35\%. Chênh lệch nhỏ cho thấy trong bộ dữ liệu này hai cơ chế bỏ phiếu gần tương đương; tuy nhiên trọng số theo khoảng cách vẫn được giữ làm cấu hình chuẩn vì hai lý do: (i) cho phép một láng giềng ở rất gần (bài viết gần như trùng lặp) lấn át các láng giềng ở xa, hợp lý với bản chất ``độ tương đồng''; (ii) cho ra \textbf{xác suất dự đoán mềm} liên tục --- điều kiện cần để vẽ đường cong ROC và linh hoạt điều chỉnh ngưỡng cảnh báo như đã phân tích.
 
 \subsection{Phân tích lỗi phân loại}
 
-Mặc dù độ chính xác rất cao, mô hình vẫn còn một số bài phân loại sai trên tập kiểm tra (9.777 bài). Theo báo cáo phân loại chi tiết của Keras: lớp tin thật được nhận đúng gần như hoàn toàn (recall $\approx$ 1,00) trong khi lớp tin giả có recall $\approx$ 0,99 --- tức phần lớn bài phân sai là \textbf{tin giả bị nhận nhầm thành tin thật}. Nhóm tổng hợp các nhóm lỗi phổ biến quan sát được trong quá trình thử nghiệm (bảng \ref{tab:phan-tich-loi}).
+Mô hình KNN phân loại sai 1.041 bài trên 9.777 bài kiểm tra, trong đó \textbf{778 bài tin giả bị nhận nhầm thành tin thật} (chiếm 75\% tổng số lỗi) và 263 bài tin thật bị nhầm thành giả. Nhóm tổng hợp các nhóm lỗi phổ biến quan sát được trong quá trình thử nghiệm (bảng \ref{tab:phan-tich-loi}).
 
 \begin{table}[H]
 \centering
@@ -428,59 +450,65 @@ Mặc dù độ chính xác rất cao, mô hình vẫn còn một số bài phâ
 \hline
 \textbf{Nhóm lỗi} & \textbf{Đặc điểm} & \textbf{Nguyên nhân có thể} \\
 \hline
-Tin thật văn phong giật gân & Tin thật viết theo lối tiêu đề câu chú ý, cảm thán & Đặc trưng văn phong bị mô hình coi là dấu hiệu tin giả \\
+Tin giả văn phong gần báo chí chính thống & Viết theo cấu trúc bài chuẩn, dùng từ vựng chủ đề chính trị trùng với tin thật & Láng giềng gần nhất đa số là tin thật; KNN quyết theo số đông cục bộ \\
 \hline
-Tin giả mô phỏng văn phong báo chí & Cấu trúc bài chuẩn 5W, trích nguồn giả & Nội dung thiếu dấu hiệu tu từ điển hình của tin giả \\
+Bài ngắn, ít thông tin & Tiêu đề ngắn, nội dung 1--2 câu & Vector thưa, ít tín hiệu tương đồng để xác định láng giềng đáng tin \\
 \hline
-Bài ngắn, ít ngữ cảnh & Tiêu đề ngắn, nội dung 1--2 câu & Thiếu đủ ngữ cảnh để LSTM tổng hợp \\
+Tin thật văn phong giật gân & Tiêu đề câu chú ý, từ ngữ cảm thán & Bị ``kéo'' về phía các bài tin giả văn phong tương tự \\
+\hline
+Bài rỗng sau tiền xử lý & Nội dung chỉ gồm từ dừng, dấu câu, chữ số & Vector 0; láng giềng gần như ngẫu nhiên (phân tích E4) \\
 \hline
 \end{tabular}
 \Nguon{Nhóm tự phân tích trên tập kiểm tra}
 \end{table}
 
-Nhận xét trên cho thấy mô hình chủ yếu học \textbf{văn phong} (mức độ giật gân, từ ngữ cường điệu) hơn là kiểm chứng sự thật của nội dung. Đây là giới hạn cố hữu của phương pháp phân loại văn bản thuần túy, đồng thời cũng gợi ý hướng cải tiến kết hợp thông tin nguồn tin hoặc kiểm chứng chéo đa bài viết.
+Nhận xét trên cho thấy mô hình chủ yếu phân biệt hai lớp qua \textbf{độ tương đồng từ vựng} hơn là kiểm chứng sự thật của nội dung. Đây là giới hạn cố hữu của phương pháp phân loại văn bản thuần túy, đồng thời gợi ý hướng cải tiến: làm sạch kỹ hơn dữ liệu (loại bài rỗng), kết hợp thông tin nguồn tin hoặc kiểm chứng chéo đa bài viết.
 
 \section{Nhận xét và thảo luận}
 \label{sec:nhan-xet}
 
-\textbf{Ưu điểm của mô hình LSTM trong đề tài:}
+\textbf{Ưu điểm của KNN trong đề tài:}
 
 \begin{itemize}
-    \item LSTM học biểu diễn văn bản trực tiếp từ dữ liệu qua lớp Embedding, nắm được ngữ nghĩa và ngữ cảnh của từ trong câu; toàn bộ pipeline từ từ điển, embedding tới phân loại được học cùng nhau, không cần giai đoạn thiết kế đặc trưng thủ công và dễ mở rộng sang dữ liệu mới.
-    \item LSTM đặc biệt phù hợp với tin tức --- dạng văn bản dài (trung bình 396--438 từ/bài trong ISOT), khi các dấu hiệu văn phong tin giả xuất hiện rải rác khắp bài viết và cần được tổng hợp qua ngữ cảnh toàn bài.
-    \item Trên bộ dữ liệu thí nghiệm, LSTM đạt 99,20\% --- cao hơn hẳn Naive Bayes (95,81\%), cao hơn Logistic Regression (98,84\%) và chỉ thấp hơn Passive Aggressive 0,22 điểm phần trăm, trong khi không phụ thuộc vào cách trích xuất đặc trưng TF-IDF được thiết kế sẵn.
+    \item \textbf{Đơn giản và không cần huấn luyện}: toàn bộ ``tri thức'' của mô hình là chính bộ dữ liệu đã gán nhãn; thêm bài tin mới được xác thực chỉ là thêm một mẫu lưu trữ, không cần huấn luyện lại.
+    \item \textbf{Dễ diễn giải} --- lợi thế nổi bật cho bài toán phát hiện tin giả: với mỗi dự đoán, hệ thống có thể chỉ ra ngay \textbf{5 bài viết gần nhất} và nhãn của chúng làm căn cứ, giúp người kiểm duyệt kiểm tra lại quyết định của máy. Các mô hình tuyến tính chỉ cho biết ``trọng số từ nào đẩy dự đoán'', khó trực quan hơn nhiều.
+    \item \textbf{Ngưỡng quyết định linh hoạt}: cơ chế bỏ phiếu có trọng số cho xác suất mềm, AUC 0,9601 cho phép điều chỉnh độ nhạy của hệ thống theo nhu cầu (bắt chặt hơn hoặc ít báo động giả hơn).
+    \item Trên bộ dữ liệu thí nghiệm, KNN đạt 89,35\% \textit{mà không cần học gì cả} --- mọi hiệu năng đến từ so khớp trực tiếp, cho thấy độ phân tách tự nhiên của hai lớp theo từ vựng.
 \end{itemize}
 
 \textbf{Nhược điểm và chi phí:}
 
 \begin{itemize}
-    \item LSTM cần thời gian huấn luyện lâu hơn đáng kể (mỗi vòng khoảng 1 phút, tổng cộng 5 vòng trên CPU cá nhân, so với vài giây của các mô hình TF-IDF); suy luận cũng chậm hơn do phải xử lý chuỗi tuần tự, chưa tối ưu cho triển khai thời gian thực.
-    \item Kết quả khó diễn giải hơn: không thể chỉ ra ``từ nào góp phần quyết định'' một cách trực tiếp như trọng số của Logistic Regression, cần công cụ phân tích chú ý (attention visualization) nếu muốn giải thích.
-    \item Độ chính xác trên tập kiểm tra không đồng nghĩa với khả năng nhận diện tin giả nói chung: như phân tích ở mục \ref{sec:kq-thuc-nghiem}, một phần độ chính xác rất cao của cả bốn mô hình có thể đến từ ``rò rỉ nguồn tin'' --- bộ dữ liệu ISOT thu tin thật và tin giả từ hai nhóm nguồn khác biệt. Trên tin giả mới có văn phong tinh vi hơn, độ chính xác thực tế có thể thấp hơn số đo trên tập kiểm tra.
+    \item \textbf{Độ chính xác thấp nhất bảng} (89,35\%, thấp hơn Passive Aggressive 10,02 điểm phần trăm), đặc biệt recall trên lớp tin giả chỉ 82,34\% --- khoảng 1/5 tin giả bị bỏ sót, loại sai nguy hiểm nhất của hệ thống phát hiện tin giả.
+    \item \textbf{Dự đoán rất chậm}: 183,29 giây cho 9.777 bài so với 0,02 giây của mô hình tuyến tính (gấp $\approx$ 9.000 lần) do đặc tính lazy learning --- mỗi truy vấn phải quét toàn bộ 29.328 bài huấn luyện. Bộ nhớ lưu mô hình cũng lớn hơn nhiều vì phải giữ nguyên toàn bộ ma trận đặc trưng tập huấn luyện.
+    \item \textbf{Nhạy cảm với dữ liệu nhiễu và lựa chọn siêu tham số}: thí nghiệm E4 cho thấy chỉ 3 bài rỗng (0,01\% dữ liệu) cộng với phép đo euclidean đã khiến độ chính xác rơi xuống 55,61\%; E3 cho thấy $k$ nhỏ làm kết quả giảm rõ (87,48\% tại $k = 1$).
 \end{itemize}
 
-\textbf{Vì sao Passive Aggressive nhỉnh hơn LSTM trên bộ dữ liệu này?} Với đặc trưng TF-IDF, các từ mang dấu hiệu nguồn (tên chủ đề, văn phong tin tức chính thống Reuters, kiểu tiêu đề giật gân\ldots) có trọng số rất cao và mô hình tuyến tính phân tách gần như hoàn hảo hai lớp; LSTM học từ chuỗi embedding nên không tận dụng trực tiếp tần suất từ toàn văn bản theo cách đó. Kết quả này một mặt xác nhận bộ dữ liệu ISOT ``dễ'' với mô hình dựa trên tần suất từ, mặt khác gợi ý rằng sự khác biệt giữa các kiến trúc chỉ bộc lộ rõ trên bộ dữ liệu cân bằng nguồn tin hơn, nơi tin giả mô phỏng sát văn phong báo chí chính thống. Việc LSTM vẫn hơn Logistic Regression 0,36 điểm phần trăm và hơn Naive Bayes hơn 3 điểm phần trăm cho thấy khả năng học ngữ cảnh của mô hình có vai trò thực sự.
+\textbf{Vì sao các mô hình tuyến tính TF-IDF vượt trội trên bộ dữ liệu này?} Với đặc trưng TF-IDF, các từ mang dấu hiệu nguồn (tên chủ đề, văn phong tin chính thống Reuters, kiểu tiêu đề giật gân\ldots) có trọng số rất cao; Logistic Regression và Passive Aggressive học một \textbf{ranh giới toàn cục} trong không gian đặc trưng, tận dụng trực tiếp tín hiệu đó và phân tách hai lớp gần như hoàn hảo (99,37\%). KNN không học ranh giới mà so khớp cục bộ: một bài tin giả viết gần văn phong báo chí chính thống sẽ có láng giềng đa số là tin thật và bị bỏ sót. Kết quả này một mặt xác nhận bộ dữ liệu ISOT ``dễ'' với mô hình dựa trên tần suất từ (hiện tượng ``rò rỉ nguồn tin''), mặt khác cho thấy điểm yếu đặc hữu của KNN trên dữ liệu thưa chiều cao --- đúng như phân tích lý thuyết ở chương 2 về lời nguyền chiều và tầm quan trọng của phép đo khoảng cách.
 
-\textbf{So sánh với các nghiên cứu khác trên cùng bộ dữ liệu:} nghiên cứu gốc \cite{ahmed2017} đạt khoảng 93\% với Passive Aggressive; các nghiên cứu công bố trên ISOT với LSTM/CNN thường đạt 98--99\% và trên 99\% với BERT \cite{bert}. Kết quả của nhóm (LSTM 99,20\%; Passive Aggressive 99,42\%) nằm trong vùng này và cao hơn nghiên cứu gốc; nguyên nhân chủ yếu là do khác biệt tiền xử lý (loại từ dừng, Porter Stemmer, loại bỏ bài trùng lặp) và cách chia tập huấn luyện/kiểm tra.
+\textbf{So sánh với các nghiên cứu khác trên cùng bộ dữ liệu:} nghiên cứu gốc \cite{ahmed2017} đạt khoảng 93\% với Passive Aggressive; các nghiên cứu công bố trên ISOT với mô hình học sâu (LSTM, CNN) thường đạt 98--99\% và trên 99\% với BERT \cite{bert}. Kết quả ba mô hình tham chiếu của nhóm (95,81\%--99,37\%) nằm trong vùng này và cao hơn nghiên cứu gốc, chủ yếu do khác biệt tiền xử lý (loại từ dừng, Porter Stemmer, loại bỏ bài trùng lặp) và cách chia tập huấn luyện/kiểm tra. KNN 89,35\% ở dưới vùng đó --- đúng như bản chất của thuật toán trên đặc trưng túi từ, và là căn cứ cho các hướng cải tiến ở kết luận (giảm chiều, biểu diễn ngữ nghĩa, chỉ mục láng giềng nhanh).
 
 \section{Ứng dụng thử nghiệm}
 
-Để minh họa khả năng ứng dụng thực tế, nhóm xây dựng một giao diện demo nhỏ bằng thư viện \textbf{Streamlit} (Python): người dùng dán nội dung một bài tin tức bất kỳ vào khung văn bản, hệ thống gọi mô hình LSTM đã huấn luyện và hiển thị dự đoán kèm xác suất (Hình \ref{fig:demo-streamlit-1} và Hình \ref{fig:demo-streamlit-2}).
+Để minh họa khả năng ứng dụng thực tế, nhóm xây dựng một giao diện demo nhỏ bằng thư viện \textbf{Streamlit} (Python): người dùng dán nội dung một bài tin tức bất kỳ vào khung văn bản, hệ thống nạp mô hình KNN đã xây dựng (kèm vectorizer TF-IDF), tiền xử lý đúng như lúc xây dựng mô hình và hiển thị dự đoán kèm xác suất (Hình \ref{fig:demo-streamlit-1} và Hình \ref{fig:demo-streamlit-2}).
 
 {\small
 \begin{verbatim}
-# app.py --- Demo phat hien tin gia bang Streamlit
+# app.py --- Demo phat hien tin gia bang Streamlit (KNN)
+import pickle
 import streamlit as st
-import tensorflow as tf
 
-model = tf.keras.models.load_model("lstm_fake_news.keras")
+with open("knn_model.pkl", "rb") as f:
+    model = pickle.load(f)
+with open("tfidf_vectorizer.pkl", "rb") as f:
+    vectorizer = pickle.load(f)
+
 st.title("Kiem tra tin that hay tin gia")
 text = st.text_area("Dan noi dung bai viet vao day:")
 
 if st.button("Kiem tra"):
-    seq = tokenizer.texts_to_sequences([text])
-    x = pad_sequences(seq, maxlen=256)
-    p = float(model.predict(x)[0][0])
+    x = vectorizer.transform([clean_text(text)])
+    p = float(model.predict_proba(x)[0][1])
     if p >= 0.5:
         st.error(f"CANH BAO: kha nang tin GIA la {p:.1%}")
     else:
@@ -504,4 +532,4 @@ if st.button("Kiem tra"):
     \Nguon{Nhóm tự thực hiện}
 \end{figure}
 
-Trong cả hai trường hợp thử nghiệm (một bài tin thật và một bài tin giả lấy từ bộ dữ liệu ISOT), mô hình dự đoán đúng với độ tin cậy 100\%. Ứng dụng demo tuy đơn giản nhưng cho thấy mô hình có thể được tích hợp vào các hệ thống thực tế: tiện ích trình duyệt hỗ trợ người đọc, hệ thống lọc nội dung cho mạng xã hội, hoặc công cụ hỗ trợ biên tập viên báo chí kiểm tra nguồn tin trước khi trích dẫn.
+Trong cả hai trường hợp thử nghiệm (một bài tin thật và một bài tin giả lấy từ bộ dữ liệu ISOT), mô hình dự đoán đúng với độ tin cậy 100\%. Ứng dụng demo tuy đơn giản nhưng cho thấy mô hình có thể được tích hợp vào các hệ thống thực tế: tiện ích trình duyệt hỗ trợ người đọc, hệ thống lọc nội dung cho mạng xã hội, hoặc công cụ hỗ trợ biên tập viên báo chí kiểm tra nguồn tin trước khi trích dẫn; chi phí dự đoán $\approx$ 19 ms mỗi bài (bảng \ref{tab:chi-phi}) đủ nhanh cho tương tác đơn bài.

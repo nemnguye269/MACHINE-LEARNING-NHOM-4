@@ -8,8 +8,8 @@ if not exist venv\Scripts\python.exe (
     exit /b 1
 )
 
-if not exist lstm_fake_news.keras (
-    echo [ERROR] lstm_fake_news.keras not found.
+if not exist knn_model.pkl (
+    echo [ERROR] knn_model.pkl not found.
     echo Run run_train.bat first to train the model.
     pause
     exit /b 1
