@@ -527,20 +527,22 @@ def render_result(res: dict, threshold_pct: int) -> str:
             chip = '<span class="chip chip-real">Tin thật</span>'
         num = fmt_pct(p_fake)
         pct = "%"
-        cap = 'xác suất mô hình gán cho lớp <b>tin giả</b>'
+        cap = 'độ tin cậy rằng đây là <b>tin giả</b>'
         if not flagged:
             num = fmt_pct(p_real)
-            cap = 'xác suất mô hình gán cho lớp <b>tin thật</b>'
+            cap = 'độ tin cậy rằng đây là <b>tin thật</b>'
         bar_real = round(p_real * 100)
         bar_fake = 100 - bar_real
         if flagged:
-            note = (f"Bị gắn cờ vì xác suất tin giả {fmt_pct(p_fake)}% vượt ngưỡng "
-                    f"{threshold_pct}%. Con số là tỷ lệ trọng số của 5 bài gần nhất "
-                    f"mang nhãn giả.")
+            note = (f"5 bài giống nhất nghiêng về tin giả, và bài càng giống thì "
+                    f"phiếu càng có giá. Mô hình chấm {fmt_pct(p_fake)}% tin giả, "
+                    f"vượt ngưỡng {threshold_pct}%, nên bài này bị gắn cờ. "
+                    f"Tăng ngưỡng nếu bạn muốn ít cảnh báo hơn.")
         else:
-            note = (f"Không bị gắn cờ vì xác suất tin giả {fmt_pct(p_fake)}% thấp hơn "
-                    f"ngưỡng {threshold_pct}%. Con số là tỷ lệ trọng số của 5 bài "
-                    f"gần nhất mang nhãn thật.")
+            note = (f"5 bài giống nhất nghiêng về tin thật, và bài càng giống thì "
+                    f"phiếu càng có giá. Mô hình chỉ chấm {fmt_pct(p_fake)}% tin giả, "
+                    f"thấp hơn ngưỡng {threshold_pct}%, nên bài này được coi là tin thật. "
+                    f"Giảm ngưỡng nếu bạn muốn bắt thêm bài đáng ngờ.")
 
     rows = []
     for i, nb in enumerate(res["neighbors"], start=1):
@@ -560,8 +562,8 @@ def render_result(res: dict, threshold_pct: int) -> str:
             '<div class="ev"><div class="ev-head"><h3>5 bài gần nhất trong tập huấn luyện</h3>'
             '<span>distance = 1 − cosine similarity</span></div><ol>' + "".join(rows) + "</ol>"
             '<p class="ev-foot"><b>d</b> càng nhỏ càng giống: 0 là trùng khít, '
-            '1 là không có từ nào chung. Đây cũng chính là 5 phiếu tạo nên con số '
-            'xác suất ở trên.</p></div>'
+            '1 là không có từ nào chung. 5 bài này chính là những phiếu tạo ra con số '
+            'phần trăm ở trên.</p></div>'
         )
     elif res["has_ref"]:
         evidence = ""
